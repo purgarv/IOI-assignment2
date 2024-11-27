@@ -72,8 +72,8 @@ hands.onResults((results) => {
         if (landmarks.length === 1) {
             // If only one hand is detected, decide its role based on its position
             const singleHand = landmarks[0];
-            const handX = singleHand[0].x * canvas.width; // x-coordinate of the wrist
-            const handY = singleHand[0].y * canvas.height;
+            const handX = singleHand[8].x * canvas.width; // x-coordinate of the wrist
+            const handY = singleHand[8].y * canvas.height;
 
             if (handX < canvas.width / 2) {
                 rightHandY = handY - paddleHeight / 2;
@@ -85,11 +85,11 @@ hands.onResults((results) => {
             const hand1 = landmarks[0];
             const hand2 = landmarks[1];
 
-            const hand1X = hand1[0].x * canvas.width;
-            const hand1Y = hand1[0].y * canvas.height;
+            const hand1X = hand1[8].x * canvas.width;
+            const hand1Y = hand1[8].y * canvas.height;
 
-            const hand2X = hand2[0].x * canvas.width;
-            const hand2Y = hand2[0].y * canvas.height;
+            const hand2X = hand2[8].x * canvas.width;
+            const hand2Y = hand2[8].y * canvas.height;
 
             if (hand1X < hand2X) {
                 // Hand 1 is on the left
