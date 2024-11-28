@@ -19,15 +19,28 @@ async function setupCamera() {
 }
 
 function countFingers(landmarks) {
-    const tips = [8, 12, 16, 20]; // Fingertips
-    const base = [6, 10, 14, 18]; // Finger bases
+    const tips = [4, 8, 12, 16, 20];
+    const base = [2, 6, 10, 14, 18];
     let count = 0;
 
-    tips.forEach((tip, i) => {
-        if (landmarks[tip].y < landmarks[base[i]].y) count++;
-    });
+    // Check thumb
+    const thumbTip = landmarks[4];
+    const thumbBase = landmarks[2];
+    const wrist = landmarks[0]; // Wrist landmark as reference
+    if (thumbTip.x > wrist.x && thumbTip.y < thumbBase.y) { 
+        count++;
+    }
+
+    // Check other fingers
+    for (let i = 1; i < tips.length; i++) {
+        if (landmarks[tips[i]].y < landmarks[base[i]].y) {
+            count++;
+        }
+    }
+
     return count;
 }
+
 
 function drawLandmarks(landmarks, handIndex) {
     landmarks.forEach((landmark, i) => {
