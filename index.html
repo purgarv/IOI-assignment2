@@ -28,12 +28,19 @@
 <body>
     <h1>Hand tracking minigames</h1>
     <p>1 finger - "Draw," 2 fingers - "Shapes", 3 fingers - "Pong"</p>
+    <p>Make a fist to confirm selection</p>
     <div style="position: relative; display: inline-block;">
         <video id="webcam" autoplay playsinline></video>
         <canvas id="overlay"></canvas>
+    </div>
+    <div>
+        <div id="draw" style="border: 2px solid #333; display: inline-block; margin: 10px; padding: 10px;">Draw</div>
+        <div id="shapes" style="border: 2px solid #333; display: inline-block; margin: 10px; padding: 10px;">Shapes</div>
+        <div id="pong" style="border: 2px solid #333; display: inline-block; margin: 10px; padding: 10px;">Pong</div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
     <script src="app.js"></script>
 </body>
+
 </html>

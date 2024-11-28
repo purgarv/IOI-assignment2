@@ -3,6 +3,7 @@ const canvasElement = document.getElementById('overlay');
 const canvasCtx = canvasElement.getContext('2d');
 
 let redirectTriggered = false; // Flag to prevent multiple redirects
+let highlightedGame = null; // Currently highlighted game
 
 async function setupCamera() {
     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -24,19 +25,17 @@ function countFingers(landmarks, handedness) {
     let count = 0;
 
     const isLeftHand = !(handedness === "Left");
-    //console.log(isLeftHand);
 
     // Check thumb
     const thumbTip = landmarks[4];
     const thumbBase = landmarks[2];
-    const wrist = landmarks[0]; // Wrist landmark as reference
 
     if (isLeftHand) {
-        if (thumbTip.x < wrist.x && thumbTip.y < thumbBase.y) { 
+        if (thumbTip.x < thumbBase.x) { 
             count++;
         }
     } else {
-        if (thumbTip.x > wrist.x && thumbTip.y < thumbBase.y) { 
+        if (thumbTip.x > thumbBase.x) { 
             count++;
         }
     }
@@ -77,19 +76,38 @@ function drawLandmarks(landmarks) {
     });
 }
 
+function highlightGame(game) {
+    if (highlightedGame === game) return; // Avoid redundant updates
+
+    // Remove highlight from previous game
+    if (highlightedGame) {
+        document.getElementById(highlightedGame).style.border = '2px solid #333';
+    }
+
+    // Highlight the new game
+    highlightedGame = game;
+    if (highlightedGame) {
+        document.getElementById(highlightedGame).style.border = '4px solid green';
+    }
+}
+
 function chooseGame(handCounts) {
     if (redirectTriggered) return; // Prevent multiple redirects
 
     if (handCounts.some(count => count === 1)) {
-        redirectTriggered = true;
-        window.location.href = './draw.html';
+        highlightGame('draw');
     } else if (handCounts.some(count => count === 2)) {
-        redirectTriggered = true;
-        window.location.href = './shapes.html';
+        highlightGame('shapes');
     } else if (handCounts.some(count => count === 3)) {
-        redirectTriggered = true;
-        window.location.href = './pong.html';
-    } 
+        highlightGame('pong');
+    } else if (handCounts.every(count => count === 0)) {
+        if (highlightedGame) {
+            redirectTriggered = true;
+            window.location.href = `./${highlightedGame}.html`;
+        }
+    } else {
+        highlightGame(null); // No valid game selected
+    }
 }
 
 async function main() {
@@ -127,6 +145,8 @@ async function main() {
                 const fingerCount = countFingers(landmarks, handedness);
                 handCounts.push(fingerCount);
             });
+
+            console.log(handCounts);
 
             chooseGame(handCounts);
         }
