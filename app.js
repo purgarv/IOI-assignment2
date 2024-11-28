@@ -18,17 +18,27 @@ async function setupCamera() {
     });
 }
 
-function countFingers(landmarks) {
+function countFingers(landmarks, handedness) {
     const tips = [4, 8, 12, 16, 20];
     const base = [2, 6, 10, 14, 18];
     let count = 0;
+
+    const isLeftHand = !(handedness === "Left");
+    console.log(isLeftHand);
 
     // Check thumb
     const thumbTip = landmarks[4];
     const thumbBase = landmarks[2];
     const wrist = landmarks[0]; // Wrist landmark as reference
-    if (thumbTip.x > wrist.x && thumbTip.y < thumbBase.y) { 
-        count++;
+
+    if (isLeftHand) {
+        if (thumbTip.x < wrist.x && thumbTip.y < thumbBase.y) { 
+            count++;
+        }
+    } else {
+        if (thumbTip.x > wrist.x && thumbTip.y < thumbBase.y) { 
+            count++;
+        }
     }
 
     // Check other fingers
@@ -37,12 +47,11 @@ function countFingers(landmarks) {
             count++;
         }
     }
-
+    console.log(count);
     return count;
 }
 
-
-function drawLandmarks(landmarks, handIndex) {
+function drawLandmarks(landmarks) {
     landmarks.forEach((landmark, i) => {
         const x = (1 - landmark.x) * canvasElement.width; // Mirror x-coordinate
         const y = landmark.y * canvasElement.height;
@@ -77,14 +86,11 @@ function chooseGame(handCounts) {
         window.location.href = './draw.html';
     } else if (handCounts.some(count => count === 2)) {
         redirectTriggered = true;
-        window.location.href = './math.html';
+        window.location.href = './shapes.html';
     } else if (handCounts.some(count => count === 3)) {
         redirectTriggered = true;
         window.location.href = './pong.html';
-    } else if (handCounts.some(count => count === 4)) {
-        redirectTriggered = true;
-        window.location.href = './shapes.html';
-    }
+    } 
 }
 
 async function main() {
@@ -115,9 +121,11 @@ async function main() {
             const handCounts = [];
 
             results.multiHandLandmarks.forEach((landmarks, index) => {
-                drawLandmarks(landmarks, index);
+                const handedness = results.multiHandedness[index]?.label || "Unknown";
 
-                const fingerCount = countFingers(landmarks);
+                drawLandmarks(landmarks);
+
+                const fingerCount = countFingers(landmarks, handedness);
                 handCounts.push(fingerCount);
             });
 
