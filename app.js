@@ -47,7 +47,6 @@ function countFingers(landmarks, handedness) {
             count++;
         }
     }
-    //console.log(count);
     return count;
 }
 
@@ -78,16 +77,16 @@ function drawLandmarks(landmarks) {
     });
 }
 
-function chooseGame(fingerSum) {
+function chooseGame(handCounts) {
     if (redirectTriggered) return; // Prevent multiple redirects
 
-    if (fingerSum.some(count => count === 1)) {
+    if (handCounts.some(count => count === 1)) {
         redirectTriggered = true;
         window.location.href = './draw.html';
-    } else if (fingerSum.some(count => count === 2)) {
+    } else if (handCounts.some(count => count === 2)) {
         redirectTriggered = true;
         window.location.href = './shapes.html';
-    } else if (fingerSum.some(count => count === 3)) {
+    } else if (handCounts.some(count => count === 3)) {
         redirectTriggered = true;
         window.location.href = './pong.html';
     } 
@@ -129,9 +128,7 @@ async function main() {
                 handCounts.push(fingerCount);
             });
 
-            // sum of all fingers
-            fingerSum = handCounts.reduce((a, b) => a + b, 0);
-            chooseGame(fingerSum);
+            chooseGame(handCounts);
         }
 
         canvasCtx.restore(); // Restore the canvas state
