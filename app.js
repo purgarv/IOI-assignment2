@@ -146,7 +146,7 @@ async function main() {
                 handCounts.push(fingerCount);
             });
 
-            console.log(handCounts);
+            //console.log(handCounts);
 
             chooseGame(handCounts);
         }

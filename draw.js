@@ -130,14 +130,6 @@ async function main() {
     });
 
     camera.start();
-
-    // Escape to exit the drawing mode
-    document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') {
-            drawing = false;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-        }
-    });
 }
 
 main();
