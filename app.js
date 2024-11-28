@@ -24,7 +24,7 @@ function countFingers(landmarks, handedness) {
     let count = 0;
 
     const isLeftHand = !(handedness === "Left");
-    console.log(isLeftHand);
+    //console.log(isLeftHand);
 
     // Check thumb
     const thumbTip = landmarks[4];
@@ -47,7 +47,7 @@ function countFingers(landmarks, handedness) {
             count++;
         }
     }
-    console.log(count);
+    //console.log(count);
     return count;
 }
 
@@ -78,16 +78,16 @@ function drawLandmarks(landmarks) {
     });
 }
 
-function chooseGame(handCounts) {
+function chooseGame(fingerSum) {
     if (redirectTriggered) return; // Prevent multiple redirects
 
-    if (handCounts.some(count => count === 1)) {
+    if (fingerSum.some(count => count === 1)) {
         redirectTriggered = true;
         window.location.href = './draw.html';
-    } else if (handCounts.some(count => count === 2)) {
+    } else if (fingerSum.some(count => count === 2)) {
         redirectTriggered = true;
         window.location.href = './shapes.html';
-    } else if (handCounts.some(count => count === 3)) {
+    } else if (fingerSum.some(count => count === 3)) {
         redirectTriggered = true;
         window.location.href = './pong.html';
     } 
@@ -129,7 +129,9 @@ async function main() {
                 handCounts.push(fingerCount);
             });
 
-            chooseGame(handCounts);
+            // sum of all fingers
+            fingerSum = handCounts.reduce((a, b) => a + b, 0);
+            chooseGame(fingerSum);
         }
 
         canvasCtx.restore(); // Restore the canvas state
