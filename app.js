@@ -2,6 +2,8 @@ const videoElement = document.getElementById('webcam');
 const canvasElement = document.getElementById('overlay');
 const canvasCtx = canvasElement.getContext('2d');
 
+let redirectTriggered = false; // Flag to prevent multiple redirects
+
 async function setupCamera() {
     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
     videoElement.srcObject = stream;
@@ -35,7 +37,7 @@ function drawLandmarks(landmarks, handIndex) {
         // Draw a circle for each landmark
         canvasCtx.beginPath();
         canvasCtx.arc(x, y, 5, 0, 2 * Math.PI);
-        canvasCtx.fillStyle = 'red' ; 
+        canvasCtx.fillStyle = 'red';
         canvasCtx.fill();
 
         // Draw connections between landmarks
@@ -47,7 +49,7 @@ function drawLandmarks(landmarks, handIndex) {
             canvasCtx.beginPath();
             canvasCtx.moveTo(prevX, prevY);
             canvasCtx.lineTo(x, y);
-            canvasCtx.strokeStyle = 'blue' ;
+            canvasCtx.strokeStyle = 'blue';
             canvasCtx.lineWidth = 2;
             canvasCtx.stroke();
         }
@@ -55,12 +57,20 @@ function drawLandmarks(landmarks, handIndex) {
 }
 
 function chooseGame(handCounts) {
+    if (redirectTriggered) return; // Prevent multiple redirects
+
     if (handCounts.some(count => count === 1)) {
+        redirectTriggered = true;
         window.location.href = './draw.html';
     } else if (handCounts.some(count => count === 2)) {
+        redirectTriggered = true;
         window.location.href = './math.html';
-    }else if (handCounts.some(count => count === 3)) {
+    } else if (handCounts.some(count => count === 3)) {
+        redirectTriggered = true;
         window.location.href = './pong.html';
+    } else if (handCounts.some(count => count === 4)) {
+        redirectTriggered = true;
+        window.location.href = './shapes.html';
     }
 }
 
@@ -79,13 +89,14 @@ async function main() {
     });
 
     hands.onResults((results) => {
+        if (redirectTriggered) return; // Skip processing if already redirected
+
         canvasCtx.save(); // Save the canvas state
         canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
         // Flip the canvas horizontally
         canvasCtx.translate(canvasElement.width, 0);
         canvasCtx.scale(-1, 1);
-
 
         if (results.multiHandLandmarks.length > 0) {
             const handCounts = [];
