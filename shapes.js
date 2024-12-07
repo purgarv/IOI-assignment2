@@ -2,7 +2,9 @@ const colors = ['red', 'blue', 'green'];
 const shapes = ['circle', 'square'];
 
 const scoreboard = document.getElementById('scoreboard');
-const message = document.getElementById('message');
+const feedback = document.getElementById('feedback');
+const feedbackSymbol = document.querySelector('#feedback .symbol');
+const feedbackText = document.querySelector('#feedback .text');
 
 let score = 0;
 let draggedElement = null;
@@ -33,14 +35,6 @@ function updateScore(points) {
   scoreboard.textContent = `Score: ${score}`;
 }
 
-// Display a message
-function displayMessage(text, color = '#333') {
-  message.textContent = text;
-  message.style.color = color;
-  setTimeout(() => {
-    message.textContent = ''; // Clear the message after 2 seconds
-  }, 2000);
-}
 
 function createRandomShape() {
   if (shapeExists) return; // Prevent new shapes from spawning if one already exists
@@ -71,7 +65,7 @@ function createRandomShape() {
 
     if (isFist && !draggedElement && isOverShape) {
       draggedElement = shape;
-    } 
+    }
     else if (!isFist && draggedElement === shape) {
       checkPileDrop();
       draggedElement = null;
@@ -110,16 +104,27 @@ function checkPileDrop() {
 
       if (draggedColor === pileColor) {
         updateScore(10);
-        displayMessage('Correct!', 'green');
+        feedback.className = 'correct';
+        feedbackSymbol.textContent = '✔';
+        feedbackText.textContent = 'Correct!';
       } else {
         updateScore(-5);
-        displayMessage('Incorrect!', 'red');
+        feedback.className = 'incorrect';
+        feedbackSymbol.textContent = '✘';
+        feedbackText.textContent = 'Incorrect!';
       }
 
-      createRandomShape(); // Spawn a new shape
+      feedback.style.display = 'block';
+
+      setTimeout(() => {
+        feedback.style.display = 'none';
+      }, 1000);
+
+      createRandomShape();
     }
   });
 }
+
 
 function checkIfFist(landmarks) {
   // Check if all fingers are down
@@ -168,7 +173,7 @@ hands.onResults((results) => {
       const x = landmark.x * canvas.width;
       const y = landmark.y * canvas.height;
       ctx.beginPath();
-      ctx.arc(x, y, 5, 0, 2 * Math.PI); 
+      ctx.arc(x, y, 5, 0, 2 * Math.PI);
       ctx.fillStyle = 'blue';
       ctx.fill();
     });
