@@ -1,14 +1,16 @@
-const colors = ['red', 'blue', 'green'];
+const colors = ['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet'];
 const shapes = ['circle', 'square'];
 
 const scoreboard = document.getElementById('scoreboard');
 const feedback = document.getElementById('feedback');
 const feedbackSymbol = document.querySelector('#feedback .symbol');
 const feedbackText = document.querySelector('#feedback .text');
+const pilesContainer = document.querySelector('.piles-container');
 
 let score = 0;
 let draggedElement = null;
 let shapeExists = false; // Tracks if a shape is currently on the screen
+let correctPileColor = null;
 
 let isFist = false; // Tracks the hand state
 let isOverShape = false; // Tracks if the hand is over a shape
@@ -40,17 +42,15 @@ function createRandomShape() {
   if (shapeExists) return; // Prevent new shapes from spawning if one already exists
 
   const shape = document.createElement('div');
-  const randomColor = colors[Math.floor(Math.random() * colors.length)];
-  const randomShape = shapes[Math.floor(Math.random() * shapes.length)];
 
-  shape.className = `shape ${randomShape}`;
-  shape.style.backgroundColor = randomColor;
+  shape.className = `shape ${shapes[Math.floor(Math.random() * shapes.length)]}`;
+  shape.style.backgroundColor = correctPileColor; // Use the correct pile's color
 
   // Shape spawn position
   shape.style.left = `${window.innerWidth / 2 - 25}px`;
   shape.style.top = `100px`;
 
-  shape.dataset.color = randomColor;
+  shape.dataset.color = correctPileColor;
 
   document.body.appendChild(shape);
   shapeExists = true;
@@ -59,9 +59,6 @@ function createRandomShape() {
     // check if the hand is over the shape
     const shapeRect = shape.getBoundingClientRect();
     isOverShape = Math.abs(handX - shapeRect.x) < 75 && Math.abs(handY - shapeRect.y) < 75;
-
-    // console.log(isOverShape);
-
 
     if (isFist && !draggedElement && isOverShape) {
       draggedElement = shape;
@@ -120,8 +117,34 @@ function checkPileDrop() {
         feedback.style.display = 'none';
       }, 1000);
 
+      // Randomize piles and generate a new shape
+      randomizePiles();
       createRandomShape();
     }
+  });
+}
+
+function randomizePiles() {
+  pilesContainer.innerHTML = ''; // Clear existing piles
+
+  // Select the correct pile color
+  correctPileColor = colors[Math.floor(Math.random() * colors.length)];
+
+  // Generate two incorrect colors
+  let incorrectColors = colors.filter((color) => color !== correctPileColor);
+  incorrectColors = incorrectColors.sort(() => 0.5 - Math.random()).slice(0, 2);
+
+  // Combine correct and incorrect colors
+  const pileColors = [correctPileColor, ...incorrectColors];
+  pileColors.sort(() => 0.5 - Math.random()); // Shuffle pile positions
+
+  pileColors.forEach((color) => {
+    const pile = document.createElement('div');
+    pile.className = `pile`;
+    pile.style.backgroundColor = '#D3D3D3';
+    pile.dataset.color = color;
+    pile.textContent = color.charAt(0).toUpperCase() + color.slice(1);
+    pilesContainer.appendChild(pile);
   });
 }
 
@@ -206,4 +229,5 @@ const camera = new Camera(videoElement, {
 });
 camera.start();
 
+randomizePiles();
 createRandomShape();
