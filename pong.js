@@ -150,10 +150,16 @@ function movePaddles() {
     rightPaddle.y = Math.max(0, Math.min(rightHandY, canvas.height - paddleHeight));
 }
 
+let lastTime = performance.now(); // Keep track of the last frame time
+const ballSpeed = 300; // Constant speed in pixels per second
+
 // Move the ball
-function moveBall() {
-    ball.x += ball.speedX;
-    ball.y += ball.speedY;
+function moveBall(dt) {
+    const velocityX = (ball.speedX / Math.sqrt(ball.speedX ** 2 + ball.speedY ** 2)) * ballSpeed;
+    const velocityY = (ball.speedY / Math.sqrt(ball.speedX ** 2 + ball.speedY ** 2)) * ballSpeed;
+
+    ball.x += velocityX * dt;
+    ball.y += velocityY * dt;
 
     // Ball collision with top and bottom walls
     if (ball.y - ball.radius < 0 || ball.y + ball.radius > canvas.height) {
@@ -191,8 +197,8 @@ function moveBall() {
 function resetBall() {
     ball.x = canvas.width / 2;
     ball.y = canvas.height / 2;
-    ball.speedX *= -1; // Reverse direction
-    ball.speedY = (Math.random() > 0.5 ? 1 : -1) * 5; // Randomize vertical direction
+    ball.speedX = Math.random() > 0.5 ? 1 : -1; // Randomize initial horizontal direction
+    ball.speedY = (Math.random() > 0.5 ? 1 : -1); // Randomize initial vertical direction
 }
 
 // Render game elements
@@ -210,13 +216,17 @@ function render() {
 }
 
 // Game loop
-function gameLoop() {
+function gameLoop(timestamp) {
+    const dt = (timestamp - lastTime) / 1000; // Convert time difference to seconds
+    lastTime = timestamp;
+
     movePaddles();
-    moveBall();
+    moveBall(dt);
     render();
 
     requestAnimationFrame(gameLoop);
 }
 
 // Start the game
-gameLoop();
+resetBall();
+requestAnimationFrame(gameLoop);
