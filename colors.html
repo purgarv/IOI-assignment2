@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shape Sorting</title>
+    <title>Color sorting</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -54,18 +54,12 @@
             padding-bottom: 10px;
             box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
             color: white;
-        }
-
-        .pile.red {
             background-color: #D3D3D3;
         }
 
-        .pile.blue {
-            background-color: #D3D3D3;
-        }
-
-        .pile.green {
-            background-color: #D3D3D3;
+        .piles-container .pile:first-child,
+        .piles-container .pile:last-child {
+            transform: translateY(-300px);
         }
 
         .shape {
@@ -78,7 +72,6 @@
         .circle {
             border-radius: 50%;
         }
-
 
         #feedback {
             position: absolute;
@@ -115,29 +108,27 @@
         #feedback.incorrect .text {
             color: red;
         }
-
     </style>
 </head>
 
 <body>
     <div id="scoreboard">Score: 0</div>
     <div class="piles-container">
-        <div class="pile red" data-color="red">Red</div>
-        <div class="pile blue" data-color="blue">Blue</div>
-        <div class="pile green" data-color="green">Green</div>
+        <div class="pile" data-color="red">Red</div>
+        <div class="pile" data-color="blue">Blue</div>
+        <div class="pile" data-color="green">Green</div>
     </div>
     <div id="feedback">
         <div class="symbol"></div>
         <div class="text"></div>
     </div>
 
-
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
 
-    <script src="shapes.js"></script>
+    <script src="colors.js"></script>
 </body>
 
 </html>

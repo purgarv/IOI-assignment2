@@ -97,7 +97,7 @@ function chooseGame(handCounts) {
     if (handCounts.some(count => count === 1)) {
         highlightGame('draw');
     } else if (handCounts.some(count => count === 2)) {
-        highlightGame('shapes');
+        highlightGame('colors');
     } else if (handCounts.some(count => count === 3)) {
         highlightGame('pong');
     } else if (handCounts.every(count => count === 0)) {

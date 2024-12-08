@@ -169,7 +169,7 @@ hands.setOptions({
   maxNumHands: 1,
   modelComplexity: 1,
   minDetectionConfidence: 0.5,
-  minTrackingConfidence: 0.5,
+  minTrackingConfidence: 0.3,
 });
 
 hands.onResults((results) => {
@@ -224,8 +224,8 @@ const camera = new Camera(videoElement, {
   onFrame: async () => {
     await hands.send({ image: videoElement });
   },
-  width: 1920,
-  height: 1080,
+  width: 640,
+  height: 480,
 });
 camera.start();
 
