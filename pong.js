@@ -39,6 +39,10 @@ const rightPaddle = {
 let leftScore = 0;
 let rightScore = 0;
 
+// Speed multiplier to make the ball faster over time
+let speedMultiplier = 1;
+const speedIncreaseRate = 0.05; // Rate at which speed increases
+
 // Mediapipe Hands setup
 const video = document.createElement("video");
 const hands = new Hands({
@@ -70,9 +74,8 @@ hands.onResults((results) => {
 
     if (landmarks.length > 0) {
         if (landmarks.length === 1) {
-            // If only one hand is detected, decide its role based on its position
             const singleHand = landmarks[0];
-            const handX = singleHand[8].x * canvas.width; // x-coordinate of the wrist
+            const handX = singleHand[8].x * canvas.width;
             const handY = singleHand[8].y * canvas.height;
 
             if (handX < canvas.width / 2) {
@@ -81,7 +84,6 @@ hands.onResults((results) => {
                 leftHandY = handY - paddleHeight / 2;
             }
         } else if (landmarks.length === 2) {
-            // If two hands are detected, assign them to paddles based on x-coordinate
             const hand1 = landmarks[0];
             const hand2 = landmarks[1];
 
@@ -92,11 +94,9 @@ hands.onResults((results) => {
             const hand2Y = hand2[8].y * canvas.height;
 
             if (hand1X < hand2X) {
-                // Hand 1 is on the left
                 rightHandY = hand1Y - paddleHeight / 2;
                 leftHandY = hand2Y - paddleHeight / 2;
             } else {
-                // Hand 2 is on the left
                 rightHandY = hand2Y - paddleHeight / 2;
                 leftHandY = hand1Y - paddleHeight / 2;
             }
@@ -106,18 +106,13 @@ hands.onResults((results) => {
 
 // Draw the video background with transparency
 function drawVideoBackground() {
-    context.save(); // Save the current state
-    context.globalAlpha = 0.05; // Set transparency for the video
-
-    // Mirror the video
+    context.save();
+    context.globalAlpha = 0.05;
     context.translate(canvas.width, 0);
     context.scale(-1, 1);
-
-    // Draw the video
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-    context.restore(); // Restore the state to normal
-    context.globalAlpha = 1.0; // Reset transparency for other elements
+    context.restore();
+    context.globalAlpha = 1.0;
 }
 
 // Draw the ball
@@ -145,28 +140,25 @@ function drawScore() {
 
 // Move paddles based on hand positions
 function movePaddles() {
-    // Constrain paddles to the canvas
     leftPaddle.y = Math.max(0, Math.min(leftHandY, canvas.height - paddleHeight));
     rightPaddle.y = Math.max(0, Math.min(rightHandY, canvas.height - paddleHeight));
 }
 
-let lastTime = performance.now(); // Keep track of the last frame time
-const ballSpeed = 300; // Constant speed in pixels per second
+let lastTime = performance.now();
+const baseBallSpeed = 300;
 
 // Move the ball
 function moveBall(dt) {
-    const velocityX = (ball.speedX / Math.sqrt(ball.speedX ** 2 + ball.speedY ** 2)) * ballSpeed;
-    const velocityY = (ball.speedY / Math.sqrt(ball.speedX ** 2 + ball.speedY ** 2)) * ballSpeed;
+    const velocityX = (ball.speedX / Math.sqrt(ball.speedX ** 2 + ball.speedY ** 2)) * baseBallSpeed * speedMultiplier;
+    const velocityY = (ball.speedY / Math.sqrt(ball.speedX ** 2 + ball.speedY ** 2)) * baseBallSpeed * speedMultiplier;
 
     ball.x += velocityX * dt;
     ball.y += velocityY * dt;
 
-    // Ball collision with top and bottom walls
     if (ball.y - ball.radius < 0 || ball.y + ball.radius > canvas.height) {
         ball.speedY *= -1;
     }
 
-    // Ball collision with paddles
     if (
         ball.x - ball.radius < leftPaddle.x + leftPaddle.width &&
         ball.y > leftPaddle.y &&
@@ -182,7 +174,6 @@ function moveBall(dt) {
         ball.speedX *= -1;
     }
 
-    // Reset ball position and update score if it goes out of bounds
     if (ball.x < 0) {
         rightScore++;
         resetBall();
@@ -191,24 +182,24 @@ function moveBall(dt) {
         leftScore++;
         resetBall();
     }
+
+    speedMultiplier += speedIncreaseRate * dt; // Gradually increase speed
 }
 
-// Reset the ball to the center
+// Reset the ball and speed multiplier
 function resetBall() {
     ball.x = canvas.width / 2;
     ball.y = canvas.height / 2;
-    ball.speedX = Math.random() > 0.5 ? 1 : -1; // Randomize initial horizontal direction
-    ball.speedY = (Math.random() > 0.5 ? 1 : -1); // Randomize initial vertical direction
+    ball.speedX = Math.random() > 0.5 ? 1 : -1;
+    ball.speedY = Math.random() > 0.5 ? 1 : -1;
+    speedMultiplier = 1; // Reset speed multiplier
 }
 
 // Render game elements
 function render() {
     context.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw video background
     drawVideoBackground();
-
-    // Draw paddles, ball, and score
     drawPaddle(leftPaddle);
     drawPaddle(rightPaddle);
     drawBall();
@@ -217,7 +208,7 @@ function render() {
 
 // Game loop
 function gameLoop(timestamp) {
-    const dt = (timestamp - lastTime) / 1000; // Convert time difference to seconds
+    const dt = (timestamp - lastTime) / 1000;
     lastTime = timestamp;
 
     movePaddles();
