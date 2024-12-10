@@ -34,7 +34,7 @@
 
         .piles-container {
             position: absolute;
-            bottom: 120px;
+            bottom: 30%;
             display: flex;
             justify-content: space-between;
             width: 90%;
@@ -57,14 +57,10 @@
             background-color: #D3D3D3;
         }
 
-        .piles-container .pile:first-child,
-        .piles-container .pile:last-child {
-            transform: translateY(-300px);
-        }
 
         .shape {
-            width: 50px;
-            height: 50px;
+            width: 150px;
+            height: 150px;
             position: absolute;
             cursor: grab;
         }
@@ -75,7 +71,7 @@
 
         #feedback {
             position: absolute;
-            top: 50%;
+            top: 30%;
             left: 50%;
             transform: translate(-50%, -50%);
             text-align: center;
@@ -114,9 +110,9 @@
 <body>
     <div id="scoreboard">Score: 0</div>
     <div class="piles-container">
-        <div class="pile" data-color="red">Red</div>
-        <div class="pile" data-color="blue">Blue</div>
-        <div class="pile" data-color="green">Green</div>
+        <div class="pile" data-color="red"></div>
+        <div class="pile" data-color="blue"></div>
+        <div class="pile" data-color="green"></div>
     </div>
     <div id="feedback">
         <div class="symbol"></div>

@@ -1,5 +1,7 @@
-const colors = ['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet'];
-const shapes = ['circle', 'square'];
+const colors = [
+  'red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet',
+  'pink', 'cyan', 'magenta', 'lime', 'teal', 'brown', 'black', 'white'
+];
 
 const scoreboard = document.getElementById('scoreboard');
 const feedback = document.getElementById('feedback');
@@ -8,12 +10,18 @@ const feedbackText = document.querySelector('#feedback .text');
 const pilesContainer = document.querySelector('.piles-container');
 
 let score = 0;
-let draggedElement = null;
-let shapeExists = false; // Tracks if a shape is currently on the screen
+let colorExists = false; // Tracks if a color name is currently displayed
 let correctPileColor = null;
+let highlightedPile = null;
+let isPaused = false;
+
+// Sounds for feedback
+const correctSound = new Audio('correct.mp3'); // Add correct sound file path
+const incorrectSound = new Audio('incorrect.mp3'); // Add incorrect sound file path
+
 
 let isFist = false; // Tracks the hand state
-let isOverShape = false; // Tracks if the hand is over a shape
+let isOverPile = false; // Tracks if the hand is over a pile
 let handX = 0, handY = 0; // Tracks hand position
 
 // Create a canvas for overlaying video and landmarks
@@ -37,117 +45,100 @@ function updateScore(points) {
   scoreboard.textContent = `Score: ${score}`;
 }
 
+function displayRandomColorName() {
+  if (colorExists) return; // Prevent a new color from being displayed if one already exists
 
-function createRandomShape() {
-  if (shapeExists) return; // Prevent new shapes from spawning if one already exists
+  // Select a random color
+  correctPileColor = colors[Math.floor(Math.random() * colors.length)];
 
-  const shape = document.createElement('div');
+  // Create and style the color name display
+  const colorNameElement = document.createElement('div');
+  colorNameElement.className = 'color-name';
+  colorNameElement.textContent = correctPileColor.toUpperCase();
+  colorNameElement.style.fontSize = '48px';
+  colorNameElement.style.fontWeight = 'bold';
+  colorNameElement.style.textAlign = 'center';
+  colorNameElement.style.margin = '50px auto';
 
-  shape.className = `shape ${shapes[Math.floor(Math.random() * shapes.length)]}`;
-  shape.style.backgroundColor = correctPileColor; // Use the correct pile's color
+  document.body.appendChild(colorNameElement);
+  colorExists = true;
 
-  // Shape spawn position
-  shape.style.left = `${window.innerWidth / 2 - 25}px`;
-  shape.style.top = `100px`;
-
-  shape.dataset.color = correctPileColor;
-
-  document.body.appendChild(shape);
-  shapeExists = true;
-
-  const updateShapePosition = () => {
-    // check if the hand is over the shape
-    const shapeRect = shape.getBoundingClientRect();
-    isOverShape = Math.abs(handX - shapeRect.x) < 75 && Math.abs(handY - shapeRect.y) < 75;
-
-    if (isFist && !draggedElement && isOverShape) {
-      draggedElement = shape;
-    }
-    else if (!isFist && draggedElement === shape) {
-      checkPileDrop();
-      draggedElement = null;
-    }
-
-    if (draggedElement) {
-      draggedElement.style.left = `${handX - 25}px`;
-      draggedElement.style.top = `${handY - 25}px`;
-    }
-    requestAnimationFrame(updateShapePosition);
-  };
-
-  updateShapePosition();
+  // Announce the color name using the Web Speech API
+  const utterance = new SpeechSynthesisUtterance(correctPileColor);
+  window.speechSynthesis.speak(utterance);
 }
 
-function checkPileDrop() {
-  if (!draggedElement) return;
+function checkPileSelection(selectedPile) {
+  if (isPaused) return; // Prevent selecting piles during the pause
 
-  const draggedRect = draggedElement.getBoundingClientRect();
-  const piles = document.querySelectorAll('.pile');
+  const pileColor = selectedPile.dataset.color;
 
-  piles.forEach((pile) => {
-    const pileRect = pile.getBoundingClientRect();
-    const isOverlapping =
-      draggedRect.left < pileRect.right &&
-      draggedRect.right > pileRect.left &&
-      draggedRect.top < pileRect.bottom &&
-      draggedRect.bottom > pileRect.top;
+  if (pileColor === correctPileColor) {
+    updateScore(10);
+    feedback.className = 'correct';
+    feedbackSymbol.textContent = '✔';
+    feedbackText.textContent = 'Correct!';
+    correctSound.play(); // Play correct sound
+  } else {
+    updateScore(-5);
+    feedback.className = 'incorrect';
+    feedbackSymbol.textContent = '✘';
+    feedbackText.textContent = 'Incorrect!';
+    incorrectSound.play(); // Play incorrect sound
+  }
 
-    if (isOverlapping) {
-      const draggedColor = draggedElement.dataset.color;
-      const pileColor = pile.dataset.color;
+  feedback.style.display = 'block';
 
-      draggedElement.remove();
-      shapeExists = false;
+  setTimeout(() => {
+    feedback.style.display = 'none';
+  }, 1000);
 
-      if (draggedColor === pileColor) {
-        updateScore(10);
-        feedback.className = 'correct';
-        feedbackSymbol.textContent = '✔';
-        feedbackText.textContent = 'Correct!';
-      } else {
-        updateScore(-5);
-        feedback.className = 'incorrect';
-        feedbackSymbol.textContent = '✘';
-        feedbackText.textContent = 'Incorrect!';
-      }
+  // Pause for 1 second before generating a new color
+  isPaused = true;
 
-      feedback.style.display = 'block';
+  setTimeout(() => {
+    // Remove the current color name and generate a new one
+    document.querySelector('.color-name').remove();
+    colorExists = false;
 
-      setTimeout(() => {
-        feedback.style.display = 'none';
-      }, 1000);
+    displayRandomColorName();
+    randomizePiles();
 
-      // Randomize piles and generate a new shape
-      randomizePiles();
-      createRandomShape();
-    }
-  });
+    isPaused = false; // Resume interaction
+  }, 1000);
 }
 
 function randomizePiles() {
   pilesContainer.innerHTML = ''; // Clear existing piles
 
-  // Select the correct pile color
-  correctPileColor = colors[Math.floor(Math.random() * colors.length)];
+  // Ensure one pile is the correct color
+  const pileColors = [correctPileColor];
+  
+  // Add two more random incorrect colors
+  const incorrectColors = colors.filter(color => color !== correctPileColor);
+  const randomIncorrectColors = incorrectColors.sort(() => 0.5 - Math.random()).slice(0, 2);
+  pileColors.push(...randomIncorrectColors);
 
-  // Generate two incorrect colors
-  let incorrectColors = colors.filter((color) => color !== correctPileColor);
-  incorrectColors = incorrectColors.sort(() => 0.5 - Math.random()).slice(0, 2);
-
-  // Combine correct and incorrect colors
-  const pileColors = [correctPileColor, ...incorrectColors];
-  pileColors.sort(() => 0.5 - Math.random()); // Shuffle pile positions
+  // Shuffle the pile colors
+  pileColors.sort(() => 0.5 - Math.random());
 
   pileColors.forEach((color) => {
     const pile = document.createElement('div');
     pile.className = `pile`;
-    pile.style.backgroundColor = '#D3D3D3';
+    pile.style.backgroundColor = color; // Set pile background to the color
+    pile.style.width = '150px';
+    pile.style.height = '150px';
+    pile.style.margin = '20px';
+    pile.style.display = 'inline-block';
+    pile.style.cursor = 'pointer';
     pile.dataset.color = color;
-    pile.textContent = color.charAt(0).toUpperCase() + color.slice(1);
+
+    // Add click event to check pile selection
+    pile.addEventListener('click', () => checkPileSelection(pile));
+
     pilesContainer.appendChild(pile);
   });
 }
-
 
 function checkIfFist(landmarks) {
   // Check if all fingers are down
@@ -155,6 +146,24 @@ function checkIfFist(landmarks) {
   const base = [6, 10, 14, 18]; // Finger bases
   return tips.every((tip, i) => landmarks[tip].y > landmarks[base[i]].y);
 }
+
+// Function to highlight the pile the user's hand is over
+function highlightPile(hoveredPile) {
+  // Remove highlight from the previously highlighted pile
+  if (highlightedPile) {
+    highlightedPile.style.border = 'none';
+    highlightedPile.style.boxShadow = 'none';
+  }
+
+  // Highlight the new pile
+  if (hoveredPile) {
+    hoveredPile.style.border = '3px solid yellow';
+    hoveredPile.style.boxShadow = '0 0 15px 5px rgba(255, 255, 0, 0.7)';
+  }
+
+  highlightedPile = hoveredPile;
+}
+
 
 // Hand Tracking Setup
 const videoElement = document.createElement('video');
@@ -168,8 +177,8 @@ const hands = new Hands({
 hands.setOptions({
   maxNumHands: 1,
   modelComplexity: 1,
-  minDetectionConfidence: 0.5,
-  minTrackingConfidence: 0.3,
+  minDetectionConfidence: 0.7,
+  minTrackingConfidence: 0.5,
 });
 
 hands.onResults((results) => {
@@ -208,15 +217,33 @@ hands.onResults((results) => {
 
     isFist = checkIfFist(mirroredLandmarks);
 
-    // Update hand position for dragging
+    // Update hand position
     handX = mirroredLandmarks[9].x * canvas.width;
     handY = mirroredLandmarks[9].y * canvas.height;
 
-    // Move dragged shape
-    if (isFist && draggedElement) {
-      draggedElement.style.left = `${handX - 25}px`;
-      draggedElement.style.top = `${handY - 25}px`;
+    // Check if the hand is over a pile
+    const piles = document.querySelectorAll('.pile');
+    let hoveredPile = null;
+
+    piles.forEach((pile) => {
+      const rect = pile.getBoundingClientRect();
+      if (
+        handX >= rect.left &&
+        handX <= rect.right &&
+        handY >= rect.top &&
+        handY <= rect.bottom
+      ) {
+        hoveredPile = pile;
+      }
+    });
+
+    highlightPile(hoveredPile);
+
+    // If a fist is made and the hand is over a pile, select the pile
+    if (isFist && hoveredPile) {
+      checkPileSelection(hoveredPile);
     }
+
   }
 });
 
@@ -229,5 +256,6 @@ const camera = new Camera(videoElement, {
 });
 camera.start();
 
+// Initialize the game
+displayRandomColorName();
 randomizePiles();
-createRandomShape();
