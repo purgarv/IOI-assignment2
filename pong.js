@@ -1,3 +1,6 @@
+// Fix: Adjusted collision detection logic for better ball-paddle interactions
+// Fix: Smoothened paddle movement using interpolation
+
 const canvas = document.getElementById("pongCanvas");
 const context = canvas.getContext("2d");
 
@@ -12,19 +15,21 @@ const ball = {
     radius: 10,
     speedX: 5,
     speedY: 5,
-    color: "white"
+    color: "white",
 };
 
 // Paddle properties
 const paddleWidth = 10;
 const paddleHeight = 100;
+const paddleSpeed = 15; // Max speed of paddle movement
 
 const leftPaddle = {
     x: 20,
     y: canvas.height / 2 - paddleHeight / 2,
     width: paddleWidth,
     height: paddleHeight,
-    color: "white"
+    color: "white",
+    targetY: canvas.height / 2 - paddleHeight / 2,
 };
 
 const rightPaddle = {
@@ -32,7 +37,8 @@ const rightPaddle = {
     y: canvas.height / 2 - paddleHeight / 2,
     width: paddleWidth,
     height: paddleHeight,
-    color: "white"
+    color: "white",
+    targetY: canvas.height / 2 - paddleHeight / 2,
 };
 
 // Scores
@@ -46,13 +52,13 @@ const speedIncreaseRate = 0.05; // Rate at which speed increases
 // Mediapipe Hands setup
 const video = document.createElement("video");
 const hands = new Hands({
-    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
 });
 hands.setOptions({
     maxNumHands: 2,
     modelComplexity: 1,
     minDetectionConfidence: 0.7,
-    minTrackingConfidence: 0.5
+    minTrackingConfidence: 0.5,
 });
 
 const camera = new Camera(video, {
@@ -79,9 +85,9 @@ hands.onResults((results) => {
             const handY = singleHand[8].y * canvas.height;
 
             if (handX < canvas.width / 2) {
-                rightHandY = handY - paddleHeight / 2;
+                rightHandY = handY;
             } else {
-                leftHandY = handY - paddleHeight / 2;
+                leftHandY = handY;
             }
         } else if (landmarks.length === 2) {
             const hand1 = landmarks[0];
@@ -94,11 +100,11 @@ hands.onResults((results) => {
             const hand2Y = hand2[8].y * canvas.height;
 
             if (hand1X < hand2X) {
-                rightHandY = hand1Y - paddleHeight / 2;
-                leftHandY = hand2Y - paddleHeight / 2;
+                rightHandY = hand1Y;
+                leftHandY = hand2Y;
             } else {
-                rightHandY = hand2Y - paddleHeight / 2;
-                leftHandY = hand1Y - paddleHeight / 2;
+                rightHandY = hand2Y;
+                leftHandY = hand1Y;
             }
         }
     }
@@ -138,10 +144,14 @@ function drawScore() {
     context.fillText(`${leftScore} : ${rightScore}`, canvas.width / 2, 50);
 }
 
-// Move paddles based on hand positions
+// Move paddles smoothly
 function movePaddles() {
-    leftPaddle.y = Math.max(0, Math.min(leftHandY, canvas.height - paddleHeight));
-    rightPaddle.y = Math.max(0, Math.min(rightHandY, canvas.height - paddleHeight));
+    leftPaddle.targetY = Math.max(0, Math.min(leftHandY - paddleHeight / 2, canvas.height - paddleHeight));
+    rightPaddle.targetY = Math.max(0, Math.min(rightHandY - paddleHeight / 2, canvas.height - paddleHeight));
+
+    // Smoothly interpolate to the target positions
+    leftPaddle.y += (leftPaddle.targetY - leftPaddle.y) * 0.2;
+    rightPaddle.y += (rightPaddle.targetY - rightPaddle.y) * 0.2;
 }
 
 let lastTime = performance.now();
@@ -155,25 +165,32 @@ function moveBall(dt) {
     ball.x += velocityX * dt;
     ball.y += velocityY * dt;
 
+    // Ball collision with top and bottom boundaries
     if (ball.y - ball.radius < 0 || ball.y + ball.radius > canvas.height) {
         ball.speedY *= -1;
     }
 
+    // Ball collision with paddles
     if (
         ball.x - ball.radius < leftPaddle.x + leftPaddle.width &&
         ball.y > leftPaddle.y &&
-        ball.y < leftPaddle.y + leftPaddle.height
+        ball.y < leftPaddle.y + leftPaddle.height &&
+        ball.speedX < 0
     ) {
         ball.speedX *= -1;
+        ball.x = leftPaddle.x + leftPaddle.width + ball.radius; // Prevent ball sticking
     }
     if (
         ball.x + ball.radius > rightPaddle.x &&
         ball.y > rightPaddle.y &&
-        ball.y < rightPaddle.y + rightPaddle.height
+        ball.y < rightPaddle.y + rightPaddle.height &&
+        ball.speedX > 0
     ) {
         ball.speedX *= -1;
+        ball.x = rightPaddle.x - ball.radius; // Prevent ball sticking
     }
 
+    // Ball out of bounds
     if (ball.x < 0) {
         rightScore++;
         resetBall();
