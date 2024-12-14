@@ -21,7 +21,6 @@ const incorrectSound = new Audio('incorrect.mp3'); // Add incorrect sound file p
 
 
 let isFist = false; // Tracks the hand state
-let isOverPile = false; // Tracks if the hand is over a pile
 let handX = 0, handY = 0; // Tracks hand position
 
 // Create a canvas for overlaying video and landmarks
@@ -113,7 +112,7 @@ function randomizePiles() {
 
   // Ensure one pile is the correct color
   const pileColors = [correctPileColor];
-  
+
   // Add two more random incorrect colors
   const incorrectColors = colors.filter(color => color !== correctPileColor);
   const randomIncorrectColors = incorrectColors.sort(() => 0.5 - Math.random()).slice(0, 2);
@@ -251,8 +250,8 @@ const camera = new Camera(videoElement, {
   onFrame: async () => {
     await hands.send({ image: videoElement });
   },
-  width: 640,
-  height: 480,
+  width: 1920,
+  height: 1080,
 });
 camera.start();
 

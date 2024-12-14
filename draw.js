@@ -125,8 +125,8 @@ async function main() {
         onFrame: async () => {
             await hands.send({ image: video });
         },
-        width: 640,
-        height: 480,
+        width: 1920,
+        height: 1080,
     });
 
     camera.start();

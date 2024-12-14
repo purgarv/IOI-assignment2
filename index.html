@@ -1,43 +1,97 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hand tracking minigames</title>
+    <title>Game Selection Menu</title>
     <style>
+        /* Menu Styles */
         body {
+            margin: 0;
             font-family: Arial, sans-serif;
+            background: linear-gradient(to bottom, #f8f9fa, #e9ecef);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        #menu {
             text-align: center;
-            background-color: #f4f4f9;
+            width: 90%;
+            max-width: 800px;
+        }
+
+        h1 {
+            font-size: 2.5em;
             color: #333;
+            margin-bottom: 20px;
         }
-        video, canvas {
-            display: block;
-            margin: 20px auto;
-            border: 2px solid #333;
-            border-radius: 8px;
-            transform: scaleX(-1);
+
+        #instructions {
+            font-size: 1.2em;
+            color: #555;
+            margin-bottom: 30px;
+            line-height: 1.5em;
         }
-        canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
+
+        .game-options {
+            display: flex;
+            justify-content: space-around;
+            gap: 50px;
+            margin-bottom: 30px;
+        }
+
+        .game {
+            width: 200px;
+            height: 200px;
+            background: #fff;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .game img {
+            width: 100px;
+            height: 100px;
+            margin-top: 30px;
+        }
+
+        .game p {
+            margin: 10px 0 0;
+            font-size: 1.4em;
+            color: #555;
         }
     </style>
 </head>
+
 <body>
-    <h1>Hand tracking minigames</h1>
-    <p>1 finger - "Draw," 2 fingers - "Colors", 3 fingers - "Pong"</p>
-    <p>Make a fist to confirm selection</p>
-    <div style="position: relative; display: inline-block;">
-        <video id="webcam" autoplay playsinline></video>
-        <canvas id="overlay"></canvas>
+    <div id="menu">
+        <h1>Choose Your Game</h1>
+        <div id="instructions">
+            Use your hand to hover over a game option. Make a fist to select a game.
+        </div>
+        <div class="game-options">
+            <div class="game" id="draw">
+                <img src="graffiti.png" alt="Draw">
+                <p>Draw</p>
+            </div>
+            <div class="game" id="colors">
+                <img src="color.png" alt="Learn colors">
+                <p>Learn colors</p>
+            </div>
+            <div class="game" id="pong">
+                <img src="pong.svg" alt="Pong">
+                <p>Pong</p>
+            </div>
+        </div>
     </div>
-    <div>
-        <div id="draw" style="border: 2px solid #333; display: inline-block; margin: 10px; padding: 10px;">Draw</div>
-        <div id="colors" style="border: 2px solid #333; display: inline-block; margin: 10px; padding: 10px;">Colors</div>
-        <div id="pong" style="border: 2px solid #333; display: inline-block; margin: 10px; padding: 10px;">Pong</div>
-    </div>
+
+
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
     <script src="app.js"></script>
