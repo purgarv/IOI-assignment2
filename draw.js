@@ -8,6 +8,7 @@ canvas.height = window.innerHeight;
 let currentColor = getRandomColor();
 let drawing = true;
 let lastIsFist = false;
+let redirectTriggered = false; // Flag to prevent multiple redirects
 
 function getRandomColor() {
     const r = Math.floor(Math.random() * 256);
@@ -108,6 +109,7 @@ async function main() {
     });
 
     hands.onResults((results) => {
+        if (redirectTriggered) return;
         if (!drawing) return;
 
         if (results.multiHandLandmarks.length > 0) {
@@ -133,6 +135,7 @@ async function main() {
             }
 
             if (isDislikeSign(landmarks)) {
+                redirectTriggered = true;
                 window.location.href = "index.html";
             } 
 

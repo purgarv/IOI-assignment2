@@ -14,6 +14,7 @@ let colorExists = false; // Tracks if a color name is currently displayed
 let correctPileColor = null;
 let highlightedPile = null;
 let isPaused = false;
+let redirectTriggered = false; // Flag to prevent multiple redirects
 
 // Sounds for feedback
 const correctSound = new Audio('correct.mp3'); // Add correct sound file path
@@ -198,6 +199,8 @@ hands.setOptions({
 });
 
 hands.onResults((results) => {
+  if (redirectTriggered) return;
+
   ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
 
   // Draw the webcam frame on the canvas
@@ -234,6 +237,7 @@ hands.onResults((results) => {
     isFist = checkIfFist(mirroredLandmarks);
 
     if (isDislikeSign(mirroredLandmarks)) {
+      redirectTriggered = true;
       window.location.href = "index.html";
     } 
 

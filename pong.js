@@ -1,5 +1,4 @@
-// Fix: Adjusted collision detection logic for better ball-paddle interactions
-// Fix: Smoothened paddle movement using interpolation
+let redirectTriggered = false; // Flag to prevent multiple redirects
 
 const canvas = document.getElementById("pongCanvas");
 const context = canvas.getContext("2d");
@@ -96,12 +95,14 @@ function isDislikeSign(landmarks) {
 
 // Process hand landmarks
 hands.onResults((results) => {
+    if (redirectTriggered) return;
     const landmarks = results.multiHandLandmarks;
 
     if (landmarks.length > 0) {
         if (landmarks.length === 1) {
 
             if (isDislikeSign(landmarks[0])) {
+                redirectTriggered = true;
                 window.location.href = "index.html";
             }
 
@@ -114,6 +115,7 @@ hands.onResults((results) => {
         } else if (landmarks.length === 2) {
 
             if (isDislikeSign(landmarks[0]) || isDislikeSign(landmarks[1])) {
+                redirectTriggered = true;
                 window.location.href = "index.html";
             }
 
