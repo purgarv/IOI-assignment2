@@ -75,22 +75,27 @@ let rightHandY = canvas.height / 2;
 
 
 
-function isDislikeSign(landmarks) {
+function isDislikeSign(landmarks, handedness) {
     // Detect "thumbs down" gesture
     const thumbTip = landmarks[4]; // Thumb tip
     const thumbBase = landmarks[2]; // Base of thumb
-    const indexTip = landmarks[8]; // Index finger tip
     const wrist = landmarks[0]; // Wrist
-
+  
     // Thumb is below the wrist
     const thumbDown = thumbTip.y > wrist.y && thumbTip.y > thumbBase.y;
-    const fingersFolded =
-        landmarks[12].y > landmarks[9].y && // Middle finger
-        landmarks[16].y > landmarks[13].y && // Ring finger
-        landmarks[20].y > landmarks[17].y; // Pinky
-
+    const fingersFolded = handedness === "Right" ?
+        landmarks[8].x > landmarks[5].x && // Index finger
+        landmarks[12].x > landmarks[9].x && // Middle finger
+        landmarks[16].x > landmarks[13].x && // Ring finger
+        landmarks[20].x > landmarks[17].x // Pinky
+        :
+        landmarks[5].x > landmarks[8].x && // Index finger
+        landmarks[9].x > landmarks[12].x && // Middle finger
+        landmarks[13].x > landmarks[16].x && // Ring finger
+        landmarks[17].x > landmarks[20].x; // Pinky
+  
     return thumbDown && fingersFolded;
-}
+  }
 
 
 // Process hand landmarks
@@ -101,7 +106,7 @@ hands.onResults((results) => {
     if (landmarks.length > 0) {
         if (landmarks.length === 1) {
 
-            if (isDislikeSign(landmarks[0])) {
+            if (isDislikeSign(landmarks[0], results.multiHandedness[0].label)) {
                 redirectTriggered = true;
                 window.location.href = "index.html";
             }
@@ -114,7 +119,7 @@ hands.onResults((results) => {
 
         } else if (landmarks.length === 2) {
 
-            if (isDislikeSign(landmarks[0]) || isDislikeSign(landmarks[1])) {
+            if (isDislikeSign(landmarks[0], results.multiHandedness[0].label) || isDislikeSign(landmarks[1], results.multiHandedness[1].label)) {
                 redirectTriggered = true;
                 window.location.href = "index.html";
             }
