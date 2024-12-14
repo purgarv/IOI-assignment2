@@ -76,12 +76,12 @@ function isDislikeSign(landmarks) {
 
     // Thumb is below the wrist
     const thumbDown = thumbTip.y > wrist.y && thumbTip.y > thumbBase.y;
-    // const fingersFolded =
-    //     landmarks[12].y > landmarks[10].y && // Middle finger
-    //     landmarks[16].y > landmarks[14].y && // Ring finger
-    //     landmarks[20].y > landmarks[18].y; // Pinky
+    const fingersFolded =
+        landmarks[12].y > landmarks[9].y && // Middle finger
+        landmarks[16].y > landmarks[13].y && // Ring finger
+        landmarks[20].y > landmarks[17].y; // Pinky
 
-    return thumbDown; //&& fingersFolded;
+    return thumbDown && fingersFolded;
 }
 
 async function setupCamera() {
