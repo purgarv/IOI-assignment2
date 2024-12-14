@@ -62,8 +62,8 @@ function displayRandomColorName() {
 
   document.body.appendChild(colorNameElement);
   colorExists = true;
-
-  responsiveVoice.speak(correctPileColor);
+  
+  responsiveVoice.speak(correctPileColor, "UK English Female");
 }
 
 function checkPileSelection(selectedPile) {
