@@ -63,9 +63,7 @@ function displayRandomColorName() {
   document.body.appendChild(colorNameElement);
   colorExists = true;
 
-  // Announce the color name using the Web Speech API
-  const utterance = new SpeechSynthesisUtterance(correctPileColor);
-  window.speechSynthesis.speak(utterance);
+  responsiveVoice.speak(correctPileColor);
 }
 
 function checkPileSelection(selectedPile) {
