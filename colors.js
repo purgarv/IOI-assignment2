@@ -241,7 +241,7 @@ hands.onResults((results) => {
 
     isFist = checkIfFist(mirroredLandmarks);
 
-    if (isDislikeSign(mirroredLandmarks, results.multiHandedness[0].label)) {
+    if (isDislikeSign(landmarks, results.multiHandedness[0].label)) {
       redirectTriggered = true;
       window.location.href = "index.html";
     }
