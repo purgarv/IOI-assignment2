@@ -66,6 +66,23 @@ function calculatePalmSize(landmarks) {
     return Math.sqrt(dx * dx + dy * dy); // Euclidean distance
 }
 
+function isDislikeSign(landmarks) {
+    // Detect "thumbs down" gesture
+    const thumbTip = landmarks[4]; // Thumb tip
+    const thumbBase = landmarks[2]; // Base of thumb
+    const indexTip = landmarks[8]; // Index finger tip
+    const wrist = landmarks[0]; // Wrist
+
+    // Thumb is below the wrist
+    const thumbDown = thumbTip.y > wrist.y && thumbTip.y > thumbBase.y;
+    // const fingersFolded =
+    //     landmarks[12].y > landmarks[10].y && // Middle finger
+    //     landmarks[16].y > landmarks[14].y && // Ring finger
+    //     landmarks[20].y > landmarks[18].y; // Pinky
+
+    return thumbDown; //&& fingersFolded;
+}
+
 async function setupCamera() {
     const videoElement = document.createElement('video');
     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -114,6 +131,10 @@ async function main() {
             if (!isCurrentlyFist) {
                 drawSpray(x, y, currentColor, scale); // Draw graffiti-like spray pattern
             }
+
+            if (isDislikeSign(landmarks)) {
+                window.location.href = "index.html";
+            } 
 
             lastIsFist = isCurrentlyFist;
         } else {

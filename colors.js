@@ -146,6 +146,23 @@ function checkIfFist(landmarks) {
   return tips.every((tip, i) => landmarks[tip].y > landmarks[base[i]].y);
 }
 
+function isDislikeSign(landmarks) {
+  // Detect "thumbs down" gesture
+  const thumbTip = landmarks[4]; // Thumb tip
+  const thumbBase = landmarks[2]; // Base of thumb
+  const indexTip = landmarks[8]; // Index finger tip
+  const wrist = landmarks[0]; // Wrist
+
+  // Thumb is below the wrist
+  const thumbDown = thumbTip.y > wrist.y && thumbTip.y > thumbBase.y;
+  // const fingersFolded =
+  //     landmarks[12].y > landmarks[10].y && // Middle finger
+  //     landmarks[16].y > landmarks[14].y && // Ring finger
+  //     landmarks[20].y > landmarks[18].y; // Pinky
+
+  return thumbDown; //&& fingersFolded;
+}
+
 // Function to highlight the pile the user's hand is over
 function highlightPile(hoveredPile) {
   // Remove highlight from the previously highlighted pile
@@ -216,6 +233,10 @@ hands.onResults((results) => {
 
     isFist = checkIfFist(mirroredLandmarks);
 
+    if (isDislikeSign(mirroredLandmarks)) {
+      window.location.href = "index.html";
+    } 
+
     // Update hand position
     handX = mirroredLandmarks[9].x * canvas.width;
     handY = mirroredLandmarks[9].y * canvas.height;
@@ -242,6 +263,8 @@ hands.onResults((results) => {
     if (isFist && hoveredPile) {
       checkPileSelection(hoveredPile);
     }
+
+
 
   }
 });

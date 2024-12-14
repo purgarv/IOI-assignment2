@@ -74,22 +74,49 @@ camera.start();
 let leftHandY = canvas.height / 2;
 let rightHandY = canvas.height / 2;
 
+
+
+function isDislikeSign(landmarks) {
+    // Detect "thumbs down" gesture
+    const thumbTip = landmarks[4]; // Thumb tip
+    const thumbBase = landmarks[2]; // Base of thumb
+    const indexTip = landmarks[8]; // Index finger tip
+    const wrist = landmarks[0]; // Wrist
+
+    // Thumb is below the wrist
+    const thumbDown = thumbTip.y > wrist.y && thumbTip.y > thumbBase.y;
+    // const fingersFolded =
+    //     landmarks[12].y > landmarks[10].y && // Middle finger
+    //     landmarks[16].y > landmarks[14].y && // Ring finger
+    //     landmarks[20].y > landmarks[18].y; // Pinky
+
+    return thumbDown; //&& fingersFolded;
+}
+
+
 // Process hand landmarks
 hands.onResults((results) => {
     const landmarks = results.multiHandLandmarks;
 
     if (landmarks.length > 0) {
         if (landmarks.length === 1) {
+
+            if (isDislikeSign(landmarks[0])) {
+                window.location.href = "index.html";
+            }
+
             const singleHand = landmarks[0];
-            const handX = singleHand[8].x * canvas.width;
             const handY = singleHand[8].y * canvas.height;
 
-            if (handX < canvas.width / 2) {
-                rightHandY = handY;
-            } else {
-                leftHandY = handY;
-            }
+            rightHandY = handY;
+            leftHandY = handY;
+
         } else if (landmarks.length === 2) {
+
+            if (isDislikeSign(landmarks[0]) || isDislikeSign(landmarks[1])) {
+                window.location.href = "index.html";
+            }
+
             const hand1 = landmarks[0];
             const hand2 = landmarks[1];
 

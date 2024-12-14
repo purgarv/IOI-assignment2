@@ -6,7 +6,7 @@ canvas.style.left = '0';
 canvas.style.width = '100%';
 canvas.style.height = '100%';
 canvas.style.zIndex = '-1'; // Move the canvas to the background
-canvas.style.opacity = '0.1'; // Add transparency
+canvas.style.opacity = '0.7'; // Add transparency
 document.body.appendChild(canvas);
 
 canvas.width = window.innerWidth;
@@ -156,10 +156,10 @@ hands.onResults((results) => {
     canvasCtx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
 
     // Draw the webcam frame on the canvas
-    canvasCtx.save();
-    canvasCtx.scale(-1, 1); // Mirror the video horizontally
-    canvasCtx.drawImage(videoElement, -canvas.width, 0, canvas.width, canvas.height);
-    canvasCtx.restore();
+    // canvasCtx.save();
+    // canvasCtx.scale(-1, 1); // Mirror the video horizontally
+    // canvasCtx.drawImage(videoElement, -canvas.width, 0, canvas.width, canvas.height);
+    // canvasCtx.restore();
 
     if (results.multiHandLandmarks.length > 0) {
         const landmarks = results.multiHandLandmarks[0];
@@ -196,10 +196,7 @@ hands.onResults((results) => {
         const games = document.querySelectorAll('.game');
         let hoveredGame = null;
 
-        console.log(handX, handY);
-
         games.forEach((game) => {
-            console.log(game.getBoundingClientRect());
             const rect = game.getBoundingClientRect();
             if (
                 handX >= rect.left &&
@@ -210,8 +207,6 @@ hands.onResults((results) => {
                 hoveredGame = game;
             }
         });
-
-        console.log(hoveredGame);
 
         highlightGame(hoveredGame);
 
