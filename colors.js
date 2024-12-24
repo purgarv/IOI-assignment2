@@ -171,14 +171,16 @@ function isDislikeSign(landmarks, handedness) {
 function highlightPile(hoveredPile) {
   // Remove highlight from the previously highlighted pile
   if (highlightedPile) {
-    highlightedPile.style.border = 'none';
+    highlightedPile.style.border = '3px solid black';
     highlightedPile.style.boxShadow = 'none';
+    highlightedPile.style.scale = 1;
   }
 
   // Highlight the new pile
   if (hoveredPile) {
-    hoveredPile.style.border = '3px solid yellow';
+    hoveredPile.style.border = '3px solid black';
     hoveredPile.style.boxShadow = '0 0 15px 5px rgba(255, 255, 0, 0.7)';
+    hoveredPile.style.scale = 1.4;
   }
 
   highlightedPile = hoveredPile;
