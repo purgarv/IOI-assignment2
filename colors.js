@@ -62,7 +62,7 @@ function displayRandomColorName() {
 
   document.body.appendChild(colorNameElement);
   colorExists = true;
-  
+
   responsiveVoice.speak(correctPileColor, "UK English Female");
 }
 
@@ -221,6 +221,29 @@ hands.onResults((results) => {
       y: landmark.y,
       z: landmark.z,
     }));
+
+    // Define connections between landmarks to represent a hand
+    const handConnections = [
+      [0, 1], [1, 2], [2, 3], [3, 4], // Thumb
+      [2, 5], [5, 6], [6, 7], [7, 8], // Index finger
+      [5, 9], [9, 10], [10, 11], [11, 12], // Middle finger
+      [9, 13], [13, 14], [14, 15], [15, 16], // Ring finger
+      [13, 17], [17, 18], [18, 19], [19, 20], // Pinky finger
+      [0, 17], [5, 9], [9, 13], [13, 17] // Palm connections
+    ];
+
+    // Draw connections between landmarks
+    ctx.beginPath();
+    ctx.strokeStyle = 'green';
+    ctx.lineWidth = 2;
+    handConnections.forEach(([start, end]) => {
+      const startLandmark = mirroredLandmarks[start];
+      const endLandmark = mirroredLandmarks[end];
+      ctx.moveTo(startLandmark.x * canvas.width, startLandmark.y * canvas.height);
+      ctx.lineTo(endLandmark.x * canvas.width, endLandmark.y * canvas.height);
+    });
+    ctx.stroke();
+
 
     // Draw landmarks on the canvas
     mirroredLandmarks.forEach((landmark) => {

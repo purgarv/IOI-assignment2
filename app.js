@@ -20,69 +20,11 @@ let isFist = false; // Tracks the hand state
 let handX = 0, handY = 0; // Tracks hand position
 
 
-
-// function countFingers(landmarks, handedness) {
-//     const tips = [4, 8, 12, 16, 20];
-//     const base = [2, 6, 10, 14, 18];
-//     let count = 0;
-
-//     const isLeftHand = !(handedness === "Left");
-
-//     // Check thumb
-//     const thumbTip = landmarks[4];
-//     const thumbBase = landmarks[2];
-
-//     if (isLeftHand) {
-//         if (thumbTip.x < thumbBase.x) { 
-//             count++;
-//         }
-//     } else {
-//         if (thumbTip.x > thumbBase.x) { 
-//             count++;
-//         }
-//     }
-
-//     // Check other fingers
-//     for (let i = 1; i < tips.length; i++) {
-//         if (landmarks[tips[i]].y < landmarks[base[i]].y) {
-//             count++;
-//         }
-//     }
-//     return count;
-// }
-
 function checkIfFist(landmarks) {
     // Check if all fingers are down
     const tips = [8, 12, 16, 20]; // Fingertips
     const base = [6, 10, 14, 18]; // Finger bases
     return tips.every((tip, i) => landmarks[tip].y > landmarks[base[i]].y);
-}
-
-function drawLandmarks(landmarks) {
-    landmarks.forEach((landmark, i) => {
-        const x = (1 - landmark.x) * canvas.width; // Mirror x-coordinate
-        const y = landmark.y * canvas.height;
-
-        // Draw a circle for each landmark
-        canvasCtx.beginPath();
-        canvasCtx.arc(x, y, 5, 0, 2 * Math.PI);
-        canvasCtx.fillStyle = 'red';
-        canvasCtx.fill();
-
-        // Draw connections between landmarks
-        if (i > 0) {
-            const prev = landmarks[i - 1];
-            const prevX = (1 - prev.x) * canvas.width;
-            const prevY = prev.y * canvas.height;
-
-            canvasCtx.beginPath();
-            canvasCtx.moveTo(prevX, prevY);
-            canvasCtx.lineTo(x, y);
-            canvasCtx.strokeStyle = 'blue';
-            canvasCtx.lineWidth = 2;
-            canvasCtx.stroke();
-        }
-    });
 }
 
 function highlightGame(game) {
@@ -180,6 +122,28 @@ hands.onResults((results) => {
             canvasCtx.fillStyle = 'blue';
             canvasCtx.fill();
         });
+
+        // Define connections between landmarks to represent a hand
+        const handConnections = [
+            [0, 1], [1, 2], [2, 3], [3, 4], // Thumb
+            [2, 5], [5, 6], [6, 7], [7, 8], // Index finger
+            [5, 9], [9, 10], [10, 11], [11, 12], // Middle finger
+            [9, 13], [13, 14], [14, 15], [15, 16], // Ring finger
+            [13, 17], [17, 18], [18, 19], [19, 20], // Pinky finger
+            [0, 17], [5, 9], [9, 13], [13, 17] // Palm connections
+        ];
+
+        // Draw connections between landmarks
+        canvasCtx.beginPath();
+        canvasCtx.strokeStyle = 'green';
+        canvasCtx.lineWidth = 2;
+        handConnections.forEach(([start, end]) => {
+            const startLandmark = mirroredLandmarks[start];
+            const endLandmark = mirroredLandmarks[end];
+            canvasCtx.moveTo(startLandmark.x * canvas.width, startLandmark.y * canvas.height);
+            canvasCtx.lineTo(endLandmark.x * canvas.width, endLandmark.y * canvas.height);
+        });
+        canvasCtx.stroke();
 
         canvasCtx.beginPath();
         canvasCtx.arc(handX, handY, 5, 0, 2 * Math.PI);

@@ -47,9 +47,12 @@ let rightScore = 0;
 // Speed multiplier to make the ball faster over time
 let speedMultiplier = 1;
 const speedIncreaseRate = 0.05; // Rate at which speed increases
+let ballIsResetting = false; // Flag to prevent ball movement during reset
 
 // Mediapipe Hands setup
 const video = document.createElement("video");
+let isMediaPipeReady = false; // Flag for MediaPipe readiness
+
 const hands = new Hands({
     locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
 });
@@ -73,15 +76,11 @@ camera.start();
 let leftHandY = canvas.height / 2;
 let rightHandY = canvas.height / 2;
 
-
-
 function isDislikeSign(landmarks, handedness) {
-    // Detect "thumbs down" gesture
     const thumbTip = landmarks[4]; // Thumb tip
     const thumbBase = landmarks[2]; // Base of thumb
     const wrist = landmarks[0]; // Wrist
   
-    // Thumb is below the wrist
     const thumbDown = thumbTip.y > wrist.y && thumbTip.y > thumbBase.y;
     const fingersFolded = handedness === "Right" ?
         landmarks[8].x > landmarks[5].x && // Index finger
@@ -95,17 +94,17 @@ function isDislikeSign(landmarks, handedness) {
         landmarks[17].x > landmarks[20].x; // Pinky
   
     return thumbDown && fingersFolded;
-  }
-
+}
 
 // Process hand landmarks
 hands.onResults((results) => {
+    isMediaPipeReady = true; // Mark MediaPipe as ready
+
     if (redirectTriggered) return;
     const landmarks = results.multiHandLandmarks;
 
     if (landmarks.length > 0) {
         if (landmarks.length === 1) {
-
             if (isDislikeSign(landmarks[0], results.multiHandedness[0].label)) {
                 redirectTriggered = true;
                 window.location.href = "index.html";
@@ -118,7 +117,6 @@ hands.onResults((results) => {
             leftHandY = handY;
 
         } else if (landmarks.length === 2) {
-
             if (isDislikeSign(landmarks[0], results.multiHandedness[0].label) || isDislikeSign(landmarks[1], results.multiHandedness[1].label)) {
                 redirectTriggered = true;
                 window.location.href = "index.html";
@@ -193,6 +191,8 @@ const baseBallSpeed = 300;
 
 // Move the ball
 function moveBall(dt) {
+    if (ballIsResetting) return; // Don't move the ball if it's resetting
+
     const velocityX = (ball.speedX / Math.sqrt(ball.speedX ** 2 + ball.speedY ** 2)) * baseBallSpeed * speedMultiplier;
     const velocityY = (ball.speedY / Math.sqrt(ball.speedX ** 2 + ball.speedY ** 2)) * baseBallSpeed * speedMultiplier;
 
@@ -245,14 +245,22 @@ function moveBall(dt) {
     speedMultiplier += speedIncreaseRate * dt;
 }
 
-
 // Reset the ball and speed multiplier
 function resetBall() {
     ball.x = canvas.width / 2;
     ball.y = canvas.height / 2;
-    ball.speedX = Math.random() > 0.5 ? 1 : -1;
-    ball.speedY = Math.random() > 0.5 ? 1 : -1;
+    ball.speedX = 0; // Temporarily set speed to 0
+    ball.speedY = 0;
     speedMultiplier = 1; // Reset speed multiplier
+
+    ballIsResetting = true; // Prevent ball movement during reset
+
+    // After a short delay, set a random direction for the ball
+    setTimeout(() => {
+        ball.speedX = Math.random() > 0.5 ? 1 : -1;
+        ball.speedY = Math.random() > 0.5 ? 1 : -1;
+        ballIsResetting = false; // Allow ball to move
+    }, 2000); // 2-second delay
 }
 
 // Render game elements
@@ -268,6 +276,11 @@ function render() {
 
 // Game loop
 function gameLoop(timestamp) {
+    if (!isMediaPipeReady) {
+        requestAnimationFrame(gameLoop); // Wait until MediaPipe is ready
+        return;
+    }
+
     const dt = (timestamp - lastTime) / 1000;
     lastTime = timestamp;
 
