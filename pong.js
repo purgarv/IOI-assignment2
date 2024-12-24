@@ -200,28 +200,35 @@ function moveBall(dt) {
     ball.y += velocityY * dt;
 
     // Ball collision with top and bottom boundaries
-    if (ball.y - ball.radius < 0 || ball.y + ball.radius > canvas.height) {
+    if (ball.y - ball.radius < 0) {
+        ball.y = ball.radius; // Prevent overlap
+        ball.speedY *= -1;
+    }
+    if (ball.y + ball.radius > canvas.height) {
+        ball.y = canvas.height - ball.radius; // Prevent overlap
         ball.speedY *= -1;
     }
 
-    // Ball collision with paddles
+    // Ball collision with left paddle
     if (
         ball.x - ball.radius < leftPaddle.x + leftPaddle.width &&
         ball.y > leftPaddle.y &&
         ball.y < leftPaddle.y + leftPaddle.height &&
         ball.speedX < 0
     ) {
-        ball.speedX *= -1;
         ball.x = leftPaddle.x + leftPaddle.width + ball.radius; // Prevent ball sticking
+        ball.speedX *= -1;
     }
+
+    // Ball collision with right paddle
     if (
         ball.x + ball.radius > rightPaddle.x &&
         ball.y > rightPaddle.y &&
         ball.y < rightPaddle.y + rightPaddle.height &&
         ball.speedX > 0
     ) {
-        ball.speedX *= -1;
         ball.x = rightPaddle.x - ball.radius; // Prevent ball sticking
+        ball.speedX *= -1;
     }
 
     // Ball out of bounds
@@ -234,8 +241,10 @@ function moveBall(dt) {
         resetBall();
     }
 
-    speedMultiplier += speedIncreaseRate * dt; // Gradually increase speed
+    // Gradually increase speed multiplier
+    speedMultiplier += speedIncreaseRate * dt;
 }
+
 
 // Reset the ball and speed multiplier
 function resetBall() {
