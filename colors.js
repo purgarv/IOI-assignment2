@@ -1,7 +1,22 @@
+// Add language options
 const colors = [
   'red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet',
   'pink', 'cyan', 'magenta', 'lime', 'teal', 'brown', 'black', 'white'
 ];
+
+const languages = [
+  { name: 'angleščina', code: 'en', flag: 'img/england.png' },
+  { name: 'nemščina', code: 'de', flag: 'img/germany.jpg' },
+  { name: 'italijanščina', code: 'it', flag: 'img/italy.png' }
+];
+
+let selectedLanguage = 'en';
+let score = 0;
+let colorExists = false;
+let correctPileColor = null;
+let highlightedPile = null;
+let isPaused = false;
+let redirectTriggered = false;
 
 const scoreboard = document.getElementById('scoreboard');
 const feedback = document.getElementById('feedback');
@@ -9,22 +24,9 @@ const feedbackSymbol = document.querySelector('#feedback .symbol');
 const feedbackText = document.querySelector('#feedback .text');
 const pilesContainer = document.querySelector('.piles-container');
 
-let score = 0;
-let colorExists = false; // Tracks if a color name is currently displayed
-let correctPileColor = null;
-let highlightedPile = null;
-let isPaused = false;
-let redirectTriggered = false; // Flag to prevent multiple redirects
+const correctSound = new Audio('correct.mp3');
+const incorrectSound = new Audio('incorrect.mp3');
 
-// Sounds for feedback
-const correctSound = new Audio('correct.mp3'); // Add correct sound file path
-const incorrectSound = new Audio('incorrect.mp3'); // Add incorrect sound file path
-
-
-let isFist = false; // Tracks the hand state
-let handX = 0, handY = 0; // Tracks hand position
-
-// Create a canvas for overlaying video and landmarks
 const canvas = document.createElement('canvas');
 const ctx = canvas.getContext('2d');
 canvas.style.position = 'absolute';
@@ -32,29 +34,138 @@ canvas.style.top = '0';
 canvas.style.left = '0';
 canvas.style.width = '100%';
 canvas.style.height = '100%';
-canvas.style.zIndex = '-1'; // Move the canvas to the background
-canvas.style.opacity = '0.7'; // Add transparency
+canvas.style.zIndex = '-1';
+canvas.style.opacity = '0.7';
 document.body.appendChild(canvas);
 
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-// Update the score display
+const videoElement = document.createElement('video');
+videoElement.style.display = 'none';
+document.body.appendChild(videoElement);
+
+const menu = document.createElement('div');
+menu.className = 'menu';
+menu.style.position = 'absolute';
+menu.style.top = '50%';
+menu.style.left = '50%';
+menu.style.transform = 'translate(-50%, -50%)';
+menu.style.display = 'flex';
+menu.style.flexDirection = 'column';
+menu.style.alignItems = 'center';
+menu.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+menu.style.padding = '50px';
+menu.style.borderRadius = '20px';
+
+const menuTitle = document.createElement('h1');
+menuTitle.textContent = 'Izberite jezik';
+menuTitle.style.color = 'white';
+menuTitle.style.marginBottom = '40px';
+menuTitle.style.fontSize = '36px';
+menu.appendChild(menuTitle);
+
+const optionsContainer = document.createElement('div');
+optionsContainer.style.display = 'flex';
+optionsContainer.style.gap = '50px';
+menu.appendChild(optionsContainer);
+
+languages.forEach((language) => {
+  const option = document.createElement('div');
+  option.className = 'menu-option';
+  option.style.display = 'flex';
+  option.style.flexDirection = 'column';
+  option.style.alignItems = 'center';
+  option.style.cursor = 'pointer';
+  option.dataset.language = language.code;
+
+  const flag = document.createElement('img');
+  flag.src = language.flag;
+  flag.style.width = '150px';
+  flag.style.height = '90px';
+
+  const label = document.createElement('span');
+  label.textContent = language.name;
+  label.style.color = 'white';
+  label.style.marginTop = '20px';
+  label.style.fontSize = '24px';
+
+  option.appendChild(flag);
+  option.appendChild(label);
+
+  optionsContainer.appendChild(option);
+});
+
+document.body.appendChild(menu);
+
 function updateScore(points) {
   score += points;
   scoreboard.textContent = `Score: ${score}`;
 }
 
-function displayRandomColorName() {
-  if (colorExists) return; // Prevent a new color from being displayed if one already exists
+function isDislikeSign(landmarks, handedness) {
+  const thumbTip = landmarks[4]; // Thumb tip
+  const thumbBase = landmarks[2]; // Base of thumb
+  const wrist = landmarks[0]; // Wrist
 
-  // Select a random color
+  const thumbDown = thumbTip.y > wrist.y && thumbTip.y > thumbBase.y;
+  const fingersFolded = handedness === "Right" ?
+      landmarks[8].x > landmarks[5].x && // Index finger
+      landmarks[12].x > landmarks[9].x && // Middle finger
+      landmarks[16].x > landmarks[13].x && // Ring finger
+      landmarks[20].x > landmarks[17].x // Pinky
+      :
+      landmarks[5].x > landmarks[8].x && // Index finger
+      landmarks[9].x > landmarks[12].x && // Middle finger
+      landmarks[13].x > landmarks[16].x && // Ring finger
+      landmarks[17].x > landmarks[20].x; // Pinky
+
+  return thumbDown && fingersFolded;
+}
+
+function highlightOption(option) {
+  if (highlightedPile) {
+    highlightedPile.style.border = 'none';
+    highlightedPile.style.scale = 1;
+  }
+  if (option) {
+    option.style.border = '3px solid yellow';
+    option.style.scale = 1.2;
+  }
+  highlightedPile = option;
+}
+
+function confirmLanguageSelection() {
+  if (highlightedPile) {
+    selectedLanguage = highlightedPile.dataset.language;
+    menu.style.display = 'none';
+    displayRandomColorName();
+    randomizePiles();
+  }
+}
+
+function displayRandomColorName() {
+  if (colorExists) return;
+
   correctPileColor = colors[Math.floor(Math.random() * colors.length)];
 
-  // Create and style the color name display
+  const translations = {
+    en: {
+      red: 'red', orange: 'orange', yellow: 'yellow', green: 'green', blue: 'blue', indigo: 'indigo', violet: 'violet', pink: 'pink', cyan: 'cyan', magenta: 'magenta', lime: 'lime', teal: 'teal', brown: 'brown', black: 'black', white: 'white'
+    },
+    de: {
+      red: 'rot', orange: 'orange', yellow: 'gelb', green: 'grün', blue: 'blau', indigo: 'indigo', violet: 'violett', pink: 'rosa', cyan: 'cyan', magenta: 'magenta', lime: 'limette', teal: 'blaugrün', brown: 'braun', black: 'schwarz', white: 'weiß'
+    },
+    it: {
+      red: 'rosso', orange: 'arancione', yellow: 'giallo', green: 'verde', blue: 'blu', indigo: 'indaco', violet: 'viola', pink: 'rosa', cyan: 'ciano', magenta: 'magenta', lime: 'lime', teal: 'verde acqua', brown: 'marrone', black: 'nero', white: 'bianco'
+    }
+  };
+
+  const translatedColor = translations[selectedLanguage][correctPileColor];
+
   const colorNameElement = document.createElement('div');
   colorNameElement.className = 'color-name';
-  colorNameElement.textContent = correctPileColor.toUpperCase();
+  colorNameElement.textContent = translatedColor.toUpperCase();
   colorNameElement.style.fontSize = '48px';
   colorNameElement.style.fontWeight = 'bold';
   colorNameElement.style.textAlign = 'center';
@@ -63,11 +174,11 @@ function displayRandomColorName() {
   document.body.appendChild(colorNameElement);
   colorExists = true;
 
-  responsiveVoice.speak(correctPileColor, "UK English Female");
+  responsiveVoice.speak(translatedColor, selectedLanguage === 'en' ? 'UK English Female' : selectedLanguage === 'de' ? 'Deutsch Female' : 'Italian Female');
 }
 
 function checkPileSelection(selectedPile) {
-  if (isPaused) return; // Prevent selecting piles during the pause
+  if (isPaused) return;
 
   const pileColor = selectedPile.dataset.color;
 
@@ -76,13 +187,13 @@ function checkPileSelection(selectedPile) {
     feedback.className = 'correct';
     feedbackSymbol.textContent = '✔';
     feedbackText.textContent = 'Correct!';
-    correctSound.play(); // Play correct sound
+    correctSound.play();
   } else {
     updateScore(-5);
     feedback.className = 'incorrect';
     feedbackSymbol.textContent = '✘';
     feedbackText.textContent = 'Incorrect!';
-    incorrectSound.play(); // Play incorrect sound
+    incorrectSound.play();
   }
 
   feedback.style.display = 'block';
@@ -91,39 +202,32 @@ function checkPileSelection(selectedPile) {
     feedback.style.display = 'none';
   }, 1000);
 
-  // Pause for 1 second before generating a new color
   isPaused = true;
 
   setTimeout(() => {
-    // Remove the current color name and generate a new one
     document.querySelector('.color-name').remove();
     colorExists = false;
 
     displayRandomColorName();
     randomizePiles();
 
-    isPaused = false; // Resume interaction
+    isPaused = false;
   }, 1000);
 }
 
 function randomizePiles() {
-  pilesContainer.innerHTML = ''; // Clear existing piles
+  pilesContainer.innerHTML = '';
 
-  // Ensure one pile is the correct color
   const pileColors = [correctPileColor];
-
-  // Add two more random incorrect colors
   const incorrectColors = colors.filter(color => color !== correctPileColor);
   const randomIncorrectColors = incorrectColors.sort(() => 0.5 - Math.random()).slice(0, 2);
   pileColors.push(...randomIncorrectColors);
-
-  // Shuffle the pile colors
   pileColors.sort(() => 0.5 - Math.random());
 
   pileColors.forEach((color) => {
     const pile = document.createElement('div');
-    pile.className = `pile`;
-    pile.style.backgroundColor = color; // Set pile background to the color
+    pile.className = 'pile';
+    pile.style.backgroundColor = color;
     pile.style.width = '150px';
     pile.style.height = '150px';
     pile.style.margin = '20px';
@@ -131,7 +235,6 @@ function randomizePiles() {
     pile.style.cursor = 'pointer';
     pile.dataset.color = color;
 
-    // Add click event to check pile selection
     pile.addEventListener('click', () => checkPileSelection(pile));
 
     pilesContainer.appendChild(pile);
@@ -139,33 +242,20 @@ function randomizePiles() {
 }
 
 function checkIfFist(landmarks) {
-  // Check if all fingers are down
-  const tips = [8, 12, 16, 20]; // Fingertips
-  const base = [6, 10, 14, 18]; // Finger bases
+  const tips = [8, 12, 16, 20];
+  const base = [6, 10, 14, 18];
   return tips.every((tip, i) => landmarks[tip].y > landmarks[base[i]].y);
 }
 
-function isDislikeSign(landmarks, handedness) {
-  // Detect "thumbs down" gesture
-  const thumbTip = landmarks[4]; // Thumb tip
-  const thumbBase = landmarks[2]; // Base of thumb
-  const wrist = landmarks[0]; // Wrist
-
-  // Thumb is below the wrist
-  const thumbDown = thumbTip.y > wrist.y && thumbTip.y > thumbBase.y;
-  const fingersFolded = handedness === "Right" ?
-    landmarks[8].x > landmarks[5].x && // Index finger
-    landmarks[12].x > landmarks[9].x && // Middle finger
-    landmarks[16].x > landmarks[13].x && // Ring finger
-    landmarks[20].x > landmarks[17].x // Pinky
-    :
-    landmarks[5].x > landmarks[8].x && // Index finger
-    landmarks[9].x > landmarks[12].x && // Middle finger
-    landmarks[13].x > landmarks[16].x && // Ring finger
-    landmarks[17].x > landmarks[20].x; // Pinky
-
-  return thumbDown && fingersFolded;
-}
+const hands = new Hands({
+  locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
+});
+hands.setOptions({
+  maxNumHands: 1,
+  modelComplexity: 1,
+  minDetectionConfidence: 0.7,
+  minTrackingConfidence: 0.5,
+});
 
 // Function to highlight the pile the user's hand is over
 function highlightPile(hoveredPile) {
@@ -186,55 +276,105 @@ function highlightPile(hoveredPile) {
   highlightedPile = hoveredPile;
 }
 
-
-// Hand Tracking Setup
-const videoElement = document.createElement('video');
-videoElement.style.display = 'none'; // Hide the video element
-document.body.appendChild(videoElement);
-
-// Initialize MediaPipe Hands
-const hands = new Hands({
-  locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
-});
-hands.setOptions({
-  maxNumHands: 1,
-  modelComplexity: 1,
-  minDetectionConfidence: 0.7,
-  minTrackingConfidence: 0.5,
-});
-
 hands.onResults((results) => {
-  if (redirectTriggered) return;
+  if (menu.style.display !== 'none') {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (results.multiHandLandmarks.length > 0) {
+      const landmarks = results.multiHandLandmarks[0];
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
+      const mirroredLandmarks = landmarks.map((landmark) => ({
+        x: 1 - landmark.x,
+        y: landmark.y,
+        z: landmark.z
+      }));
 
-  // Draw the webcam frame on the canvas
-  // ctx.save();
-  // ctx.scale(-1, 1); // Mirror the video horizontally
-  // ctx.drawImage(videoElement, -canvas.width, 0, canvas.width, canvas.height);
-  // ctx.restore();
+      handX = mirroredLandmarks[9].x * canvas.width;
+      handY = mirroredLandmarks[9].y * canvas.height;
+
+      const options = document.querySelectorAll('.menu-option');
+      let hoveredOption = null;
+
+      options.forEach((option) => {
+        const rect = option.getBoundingClientRect();
+        if (
+          handX >= rect.left &&
+          handX <= rect.right &&
+          handY >= rect.top &&
+          handY <= rect.bottom
+        ) {
+          hoveredOption = option;
+        }
+      });
+
+      if (isDislikeSign(mirroredLandmarks, results.multiHandedness[0].label)) {
+        redirectTriggered = true;
+        window.location.href = "index.html";
+      }
+
+      highlightOption(hoveredOption);
+
+      if (checkIfFist(mirroredLandmarks) && hoveredOption) {
+        confirmLanguageSelection();
+      }
+
+      const handConnections = [
+        [0, 1], [1, 2], [2, 3], [3, 4],
+        [2, 5], [5, 6], [6, 7], [7, 8],
+        [5, 9], [9, 10], [10, 11], [11, 12],
+        [9, 13], [13, 14], [14, 15], [15, 16],
+        [13, 17], [17, 18], [18, 19], [19, 20],
+        [0, 17], [5, 9], [9, 13], [13, 17]
+      ];
+
+      ctx.beginPath();
+      ctx.strokeStyle = 'green';
+      ctx.lineWidth = 2;
+      handConnections.forEach(([start, end]) => {
+        const startLandmark = mirroredLandmarks[start];
+        const endLandmark = mirroredLandmarks[end];
+        ctx.moveTo(startLandmark.x * canvas.width, startLandmark.y * canvas.height);
+        ctx.lineTo(endLandmark.x * canvas.width, endLandmark.y * canvas.height);
+      });
+      ctx.stroke();
+
+      mirroredLandmarks.forEach((landmark) => {
+        const x = landmark.x * canvas.width;
+        const y = landmark.y * canvas.height;
+        ctx.beginPath();
+        ctx.arc(x, y, 5, 0, 2 * Math.PI);
+        ctx.fillStyle = 'blue';
+        ctx.fill();
+      });
+
+      ctx.beginPath();
+      ctx.arc(handX, handY, 5, 0, 2 * Math.PI);
+      ctx.fillStyle = 'red';
+      ctx.fill();
+
+    }
+    return;
+  }
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   if (results.multiHandLandmarks.length > 0) {
     const landmarks = results.multiHandLandmarks[0];
 
-    // Mirror the hand position horizontally
     const mirroredLandmarks = landmarks.map((landmark) => ({
       x: 1 - landmark.x,
       y: landmark.y,
       z: landmark.z,
     }));
 
-    // Define connections between landmarks to represent a hand
     const handConnections = [
-      [0, 1], [1, 2], [2, 3], [3, 4], // Thumb
-      [2, 5], [5, 6], [6, 7], [7, 8], // Index finger
-      [5, 9], [9, 10], [10, 11], [11, 12], // Middle finger
-      [9, 13], [13, 14], [14, 15], [15, 16], // Ring finger
-      [13, 17], [17, 18], [18, 19], [19, 20], // Pinky finger
-      [0, 17], [5, 9], [9, 13], [13, 17] // Palm connections
+      [0, 1], [1, 2], [2, 3], [3, 4],
+      [2, 5], [5, 6], [6, 7], [7, 8],
+      [5, 9], [9, 10], [10, 11], [11, 12],
+      [9, 13], [13, 14], [14, 15], [15, 16],
+      [13, 17], [17, 18], [18, 19], [19, 20],
+      [0, 17], [5, 9], [9, 13], [13, 17]
     ];
 
-    // Draw connections between landmarks
     ctx.beginPath();
     ctx.strokeStyle = 'green';
     ctx.lineWidth = 2;
@@ -246,8 +386,6 @@ hands.onResults((results) => {
     });
     ctx.stroke();
 
-
-    // Draw landmarks on the canvas
     mirroredLandmarks.forEach((landmark) => {
       const x = landmark.x * canvas.width;
       const y = landmark.y * canvas.height;
@@ -262,18 +400,16 @@ hands.onResults((results) => {
     ctx.fillStyle = 'red';
     ctx.fill();
 
-    isFist = checkIfFist(mirroredLandmarks);
-
-    if (isDislikeSign(landmarks, results.multiHandedness[0].label)) {
+    if (isDislikeSign(mirroredLandmarks, results.multiHandedness[0].label)) {
       redirectTriggered = true;
       window.location.href = "index.html";
     }
 
-    // Update hand position
+    isFist = checkIfFist(mirroredLandmarks);
+
     handX = mirroredLandmarks[9].x * canvas.width;
     handY = mirroredLandmarks[9].y * canvas.height;
 
-    // Check if the hand is over a pile
     const piles = document.querySelectorAll('.pile');
     let hoveredPile = null;
 
@@ -291,7 +427,6 @@ hands.onResults((results) => {
 
     highlightPile(hoveredPile);
 
-    // If a fist is made and the hand is over a pile, select the pile
     if (isFist && hoveredPile) {
       checkPileSelection(hoveredPile);
     }
@@ -306,7 +441,3 @@ const camera = new Camera(videoElement, {
   height: 1080,
 });
 camera.start();
-
-// Initialize the game
-displayRandomColorName();
-randomizePiles();
