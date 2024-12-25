@@ -80,6 +80,8 @@ function isDislikeSign(landmarks, handedness) {
     const thumbTip = landmarks[4]; // Thumb tip
     const thumbBase = landmarks[2]; // Base of thumb
     const wrist = landmarks[0]; // Wrist
+
+    console.log(handedness);
   
     const thumbDown = thumbTip.y > wrist.y && thumbTip.y > thumbBase.y;
     const fingersFolded = handedness === "Right" ?

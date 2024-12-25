@@ -110,15 +110,15 @@ function isDislikeSign(landmarks, handedness) {
 
   const thumbDown = thumbTip.y > wrist.y && thumbTip.y > thumbBase.y;
   const fingersFolded = handedness === "Right" ?
-      landmarks[8].x > landmarks[5].x && // Index finger
-      landmarks[12].x > landmarks[9].x && // Middle finger
-      landmarks[16].x > landmarks[13].x && // Ring finger
-      landmarks[20].x > landmarks[17].x // Pinky
-      :
-      landmarks[5].x > landmarks[8].x && // Index finger
-      landmarks[9].x > landmarks[12].x && // Middle finger
-      landmarks[13].x > landmarks[16].x && // Ring finger
-      landmarks[17].x > landmarks[20].x; // Pinky
+    landmarks[8].x > landmarks[5].x && // Index finger
+    landmarks[12].x > landmarks[9].x && // Middle finger
+    landmarks[16].x > landmarks[13].x && // Ring finger
+    landmarks[20].x > landmarks[17].x // Pinky
+    :
+    landmarks[5].x > landmarks[8].x && // Index finger
+    landmarks[9].x > landmarks[12].x && // Middle finger
+    landmarks[13].x > landmarks[16].x && // Ring finger
+    landmarks[17].x > landmarks[20].x; // Pinky
 
   return thumbDown && fingersFolded;
 }
@@ -306,7 +306,7 @@ hands.onResults((results) => {
         }
       });
 
-      if (isDislikeSign(mirroredLandmarks, results.multiHandedness[0].label)) {
+      if (isDislikeSign(landmarks, results.multiHandedness[0].label)) {
         redirectTriggered = true;
         window.location.href = "index.html";
       }
@@ -400,7 +400,7 @@ hands.onResults((results) => {
     ctx.fillStyle = 'red';
     ctx.fill();
 
-    if (isDislikeSign(mirroredLandmarks, results.multiHandedness[0].label)) {
+    if (isDislikeSign(landmarks, results.multiHandedness[0].label)) {
       redirectTriggered = true;
       window.location.href = "index.html";
     }
