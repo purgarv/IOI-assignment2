@@ -107,11 +107,6 @@ hands.onResults((results) => {
 
     if (landmarks.length > 0) {
         if (landmarks.length === 1) {
-            if (isDislikeSign(landmarks[0], results.multiHandedness[0].label)) {
-                redirectTriggered = true;
-                window.location.href = "index.html";
-            }
-
             const singleHand = landmarks[0];
             const handY = singleHand[8].y * canvas.height;
 
@@ -119,7 +114,7 @@ hands.onResults((results) => {
             leftHandY = handY;
 
         } else if (landmarks.length === 2) {
-            if (isDislikeSign(landmarks[0], results.multiHandedness[0].label) || isDislikeSign(landmarks[1], results.multiHandedness[1].label)) {
+            if (isDislikeSign(landmarks[0], results.multiHandedness[0].label) && isDislikeSign(landmarks[1], results.multiHandedness[1].label)) {
                 redirectTriggered = true;
                 window.location.href = "index.html";
             }

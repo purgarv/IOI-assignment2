@@ -107,7 +107,7 @@ async function main() {
     });
 
     hands.setOptions({
-        maxNumHands: 1,
+        maxNumHands: 2,
         modelComplexity: 1,
         minDetectionConfidence: 0.7,
         minTrackingConfidence: 0.5,
@@ -117,7 +117,7 @@ async function main() {
         if (redirectTriggered) return;
         if (!drawing) return;
 
-        if (results.multiHandLandmarks.length > 0) {
+        if (results.multiHandLandmarks.length === 1) {
             const landmarks = results.multiHandLandmarks[0];
             const palmCenter = calculatePalmCenter(landmarks);
 
@@ -139,13 +139,14 @@ async function main() {
                 drawSpray(x, y, currentColor, scale); // Draw graffiti-like spray pattern
             }
 
-            if (isDislikeSign(landmarks, results.multiHandedness[0].label)) {
+            lastIsFist = isCurrentlyFist;
+        } else if (results.multiHandLandmarks.length === 2) {
+            if (isDislikeSign(results.multiHandLandmarks[0], results.multiHandedness[0].label) && isDislikeSign(results.multiHandLandmarks[1], results.multiHandedness[1].label)) {
                 redirectTriggered = true;
                 window.location.href = "index.html";
             }
-
-            lastIsFist = isCurrentlyFist;
-        } else {
+        }
+        else {
             lastIsFist = false; // Reset if no hands are detected
         }
     });

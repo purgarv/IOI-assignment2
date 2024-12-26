@@ -251,7 +251,7 @@ const hands = new Hands({
   locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
 });
 hands.setOptions({
-  maxNumHands: 1,
+  maxNumHands: 2,
   modelComplexity: 1,
   minDetectionConfidence: 0.7,
   minTrackingConfidence: 0.5,
@@ -279,7 +279,7 @@ function highlightPile(hoveredPile) {
 hands.onResults((results) => {
   if (menu.style.display !== 'none') {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    if (results.multiHandLandmarks.length > 0) {
+    if (results.multiHandLandmarks.length === 1) {
       const landmarks = results.multiHandLandmarks[0];
 
       const mirroredLandmarks = landmarks.map((landmark) => ({
@@ -305,11 +305,6 @@ hands.onResults((results) => {
           hoveredOption = option;
         }
       });
-
-      if (isDislikeSign(landmarks, results.multiHandedness[0].label)) {
-        redirectTriggered = true;
-        window.location.href = "index.html";
-      }
 
       highlightOption(hoveredOption);
 
@@ -352,12 +347,18 @@ hands.onResults((results) => {
       ctx.fill();
 
     }
+    else if (results.multiHandLandmarks.length === 2) {
+      if (isDislikeSign(results.multiHandLandmarks[0], results.multiHandedness[0].label) && isDislikeSign(results.multiHandLandmarks[1], results.multiHandedness[1].label)) {
+        redirectTriggered = true;
+        window.location.href = "index.html";
+      }
+    }
     return;
   }
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  if (results.multiHandLandmarks.length > 0) {
+  if (results.multiHandLandmarks.length === 1) {
     const landmarks = results.multiHandLandmarks[0];
 
     const mirroredLandmarks = landmarks.map((landmark) => ({
@@ -400,11 +401,6 @@ hands.onResults((results) => {
     ctx.fillStyle = 'red';
     ctx.fill();
 
-    if (isDislikeSign(landmarks, results.multiHandedness[0].label)) {
-      redirectTriggered = true;
-      window.location.href = "index.html";
-    }
-
     isFist = checkIfFist(mirroredLandmarks);
 
     handX = mirroredLandmarks[9].x * canvas.width;
@@ -430,7 +426,14 @@ hands.onResults((results) => {
     if (isFist && hoveredPile) {
       checkPileSelection(hoveredPile);
     }
+  } 
+  else if(results.multiHandLandmarks.length === 2) {
+    if (isDislikeSign(results.multiHandLandmarks[0], results.multiHandedness[0].label) && isDislikeSign(results.multiHandLandmarks[1], results.multiHandedness[1].label)) {
+      redirectTriggered = true;
+      window.location.href = "index.html";
+    }
   }
+
 });
 
 const camera = new Camera(videoElement, {
