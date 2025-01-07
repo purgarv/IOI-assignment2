@@ -138,11 +138,37 @@ function highlightOption(option) {
 function confirmLanguageSelection() {
   if (highlightedPile) {
     selectedLanguage = highlightedPile.dataset.language;
+
+    // Get the name of the selected language
+    const selectedLanguageName = selectedLanguage === 'en' ? 'ENGLISH' : selectedLanguage === 'de' ? 'DEUTSCH' : 'ITALIANO';
+
+    // Display the selected language
+    const selectedLanguageDisplay = document.createElement('div');
+    selectedLanguageDisplay.className = 'selected-language';
+    selectedLanguageDisplay.textContent = `Selected Language: ${selectedLanguageName}`;
+    selectedLanguageDisplay.style.fontSize = '60px';
+    selectedLanguageDisplay.style.color = 'black';
+    selectedLanguageDisplay.style.fontWeight = 'bold';
+    selectedLanguageDisplay.style.textAlign = 'center';
+    selectedLanguageDisplay.style.margin = '20px auto';
+
+    document.body.appendChild(selectedLanguageDisplay);
+
+    // Speak the selected language name
+    responsiveVoice.speak(selectedLanguageName, selectedLanguage === 'en' ? 'UK English Female' : selectedLanguage === 'de' ? 'Deutsch Female' : 'Italian Female');
+
+    // Hide the menu
     menu.style.display = 'none';
-    displayRandomColorName();
-    randomizePiles();
+
+    // Delay of 2 seconds before starting the game
+    setTimeout(() => {
+      selectedLanguageDisplay.remove(); // Remove the display
+      displayRandomColorName();
+      randomizePiles();
+    }, 1500);
   }
 }
+
 
 function displayRandomColorName() {
   if (colorExists) return;
@@ -212,7 +238,7 @@ function checkPileSelection(selectedPile) {
     randomizePiles();
 
     isPaused = false;
-  }, 1000);
+  }, 1500);
 }
 
 function randomizePiles() {
