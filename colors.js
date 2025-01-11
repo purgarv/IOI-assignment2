@@ -17,6 +17,7 @@ let correctPileColor = null;
 let highlightedPile = null;
 let isPaused = false;
 let redirectTriggered = false;
+let promptClosed = false; // To track if the prompt is closed
 
 const scoreboard = document.getElementById('scoreboard');
 const feedback = document.getElementById('feedback');
@@ -34,7 +35,6 @@ canvas.style.top = '0';
 canvas.style.left = '0';
 canvas.style.width = '100%';
 canvas.style.height = '100%';
-canvas.style.zIndex = '-1';
 canvas.style.opacity = '0.7';
 document.body.appendChild(canvas);
 
@@ -45,58 +45,7 @@ const videoElement = document.createElement('video');
 videoElement.style.display = 'none';
 document.body.appendChild(videoElement);
 
-const menu = document.createElement('div');
-menu.className = 'menu';
-menu.style.position = 'absolute';
-menu.style.top = '50%';
-menu.style.left = '50%';
-menu.style.transform = 'translate(-50%, -50%)';
-menu.style.display = 'flex';
-menu.style.flexDirection = 'column';
-menu.style.alignItems = 'center';
-menu.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
-menu.style.padding = '50px';
-menu.style.borderRadius = '20px';
 
-const menuTitle = document.createElement('h1');
-menuTitle.textContent = 'Izberite jezik';
-menuTitle.style.color = 'white';
-menuTitle.style.marginBottom = '40px';
-menuTitle.style.fontSize = '36px';
-menu.appendChild(menuTitle);
-
-const optionsContainer = document.createElement('div');
-optionsContainer.style.display = 'flex';
-optionsContainer.style.gap = '50px';
-menu.appendChild(optionsContainer);
-
-languages.forEach((language) => {
-  const option = document.createElement('div');
-  option.className = 'menu-option';
-  option.style.display = 'flex';
-  option.style.flexDirection = 'column';
-  option.style.alignItems = 'center';
-  option.style.cursor = 'pointer';
-  option.dataset.language = language.code;
-
-  const flag = document.createElement('img');
-  flag.src = language.flag;
-  flag.style.width = '150px';
-  flag.style.height = '90px';
-
-  const label = document.createElement('span');
-  label.textContent = language.name;
-  label.style.color = 'white';
-  label.style.marginTop = '20px';
-  label.style.fontSize = '24px';
-
-  option.appendChild(flag);
-  option.appendChild(label);
-
-  optionsContainer.appendChild(option);
-});
-
-document.body.appendChild(menu);
 
 function updateScore(points) {
   score += points;
@@ -238,7 +187,7 @@ function checkPileSelection(selectedPile) {
     randomizePiles();
 
     isPaused = false;
-  }, 1500);
+  }, 1000);
 }
 
 function randomizePiles() {
@@ -302,7 +251,176 @@ function highlightPile(hoveredPile) {
   highlightedPile = hoveredPile;
 }
 
+function calculatePalmCenter(landmarks) {
+  const points = [0, 5, 9, 13, 17];
+  const center = points.reduce(
+      (acc, point) => {
+          acc.x += landmarks[point].x;
+          acc.y += landmarks[point].y;
+          return acc;
+      },
+      { x: 0, y: 0 }
+  );
+  center.x /= points.length;
+  center.y /= points.length;
+  return center;
+}
+
+function createPrompt() {
+  const overlay = document.createElement('div');
+  overlay.id = 'instructionOverlay';
+  overlay.style.position = 'fixed';
+  overlay.style.top = 0;
+  overlay.style.left = 0;
+  overlay.style.width = '100%';
+  overlay.style.height = '100%';
+  overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+  overlay.style.display = 'flex';
+  overlay.style.flexDirection = 'column';
+  overlay.style.justifyContent = 'center';
+  overlay.style.alignItems = 'center';
+  overlay.style.color = 'white';
+  overlay.style.fontSize = '24px';
+  overlay.style.textAlign = 'center';
+  overlay.innerHTML = `
+      <h1>Učenje barv</h1>
+      <p>Da začnete igro, izberite jezik. <br> V igri se z roko premaknite nad barvo, ki se ujema z izpisanim imenom in izgovorjavo, nato pa za potrditev izbire naredite pest.</p>
+      <p>Za vrnitev na glavni meni naredite 👎 z obema rokama.</p>
+      <p>Za nadaljevanje držite roko nad OK in naredite pest.</p>
+      <button id="okButton" style="margin-top: 20px; padding: 10px 20px; font-size: 24px; cursor: pointer;">OK</button>
+  `;
+  document.body.appendChild(overlay);
+
+  const okButton = document.getElementById('okButton');
+  okButton.style.position = 'relative';
+  okButton.style.zIndex = '10';
+
+  return okButton;
+}
+
+const menu = document.createElement('div');
+const menuTitle = document.createElement('h1');
+const optionsContainer = document.createElement('div');
+function createMenu() {
+  menu.className = 'menu';
+  menu.style.position = 'absolute';
+  menu.style.top = '50%';
+  menu.style.left = '50%';
+  menu.style.transform = 'translate(-50%, -50%)';
+  menu.style.display = 'flex';
+  menu.style.flexDirection = 'column';
+  menu.style.alignItems = 'center';
+  menu.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+  menu.style.padding = '50px';
+  menu.style.borderRadius = '20px';
+
+  menuTitle.textContent = 'Izberite jezik';
+  menuTitle.style.color = 'white';
+  menuTitle.style.marginBottom = '40px';
+  menuTitle.style.fontSize = '36px';
+  menu.appendChild(menuTitle);
+
+  optionsContainer.style.display = 'flex';
+  optionsContainer.style.gap = '50px';
+  menu.appendChild(optionsContainer);
+
+  languages.forEach((language) => {
+    const option = document.createElement('div');
+    option.className = 'menu-option';
+    option.style.display = 'flex';
+    option.style.flexDirection = 'column';
+    option.style.alignItems = 'center';
+    option.style.cursor = 'pointer';
+    option.dataset.language = language.code;
+
+    const flag = document.createElement('img');
+    flag.src = language.flag;
+    flag.style.width = '150px';
+    flag.style.height = '90px';
+
+    const label = document.createElement('span');
+    label.textContent = language.name;
+    label.style.color = 'white';
+    label.style.marginTop = '20px';
+    label.style.fontSize = '24px';
+
+    option.appendChild(flag);
+    option.appendChild(label);
+
+    optionsContainer.appendChild(option);
+  });
+
+  document.body.appendChild(menu);
+
+}
+
+
 hands.onResults((results) => {
+  if (!promptClosed) {
+    const landmarks = results.multiHandLandmarks;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (landmarks.length === 1) {
+      const palmCenter = calculatePalmCenter(landmarks[0]);
+      const palmX = canvas.width - palmCenter.x * canvas.width;
+      const palmY = palmCenter.y * canvas.height;
+
+      const okButton = document.getElementById('okButton');
+      const buttonRect = okButton.getBoundingClientRect();
+
+      const mirroredLandmarks = landmarks[0].map((landmark) => ({
+        x: 1 - landmark.x,
+        y: landmark.y,
+        z: landmark.z,
+      }));
+
+      const handConnections = [
+        [0, 1], [1, 2], [2, 3], [3, 4],
+        [2, 5], [5, 6], [6, 7], [7, 8],
+        [5, 9], [9, 10], [10, 11], [11, 12],
+        [9, 13], [13, 14], [14, 15], [15, 16],
+        [13, 17], [17, 18], [18, 19], [19, 20],
+        [0, 17], [5, 9], [9, 13], [13, 17]
+      ];
+
+      ctx.beginPath();
+      ctx.strokeStyle = 'green';
+      ctx.lineWidth = 2;
+      handConnections.forEach(([start, end]) => {
+        const startLandmark = mirroredLandmarks[start];
+        const endLandmark = mirroredLandmarks[end];
+        ctx.moveTo(startLandmark.x * canvas.width, startLandmark.y * canvas.height);
+        ctx.lineTo(endLandmark.x * canvas.width, endLandmark.y * canvas.height);
+      });
+      ctx.stroke();
+
+      mirroredLandmarks.forEach((landmark) => {
+        const x = landmark.x * canvas.width;
+        const y = landmark.y * canvas.height;
+        ctx.beginPath();
+        ctx.arc(x, y, 5, 0, 2 * Math.PI);
+        ctx.fillStyle = 'red';
+        ctx.fill();
+      });
+
+      if (
+        palmX > buttonRect.left &&
+        palmX < buttonRect.right &&
+        palmY > buttonRect.top &&
+        palmY < buttonRect.bottom &&
+        checkIfFist(landmarks[0])
+      ) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        promptClosed = true;
+        document.getElementById('instructionOverlay').remove();
+        setTimeout(() => {
+          createMenu();
+        }, 500);
+      }
+    }
+    return;
+  }
+
+
   if (menu.style.display !== 'none') {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     if (results.multiHandLandmarks.length === 1) {
@@ -335,6 +453,7 @@ hands.onResults((results) => {
       highlightOption(hoveredOption);
 
       if (checkIfFist(mirroredLandmarks) && hoveredOption) {
+        canvas.style.zIndex = '-1';
         confirmLanguageSelection();
       }
 
@@ -452,8 +571,8 @@ hands.onResults((results) => {
     if (isFist && hoveredPile) {
       checkPileSelection(hoveredPile);
     }
-  } 
-  else if(results.multiHandLandmarks.length === 2) {
+  }
+  else if (results.multiHandLandmarks.length === 2) {
     if (isDislikeSign(results.multiHandLandmarks[0], results.multiHandedness[0].label) && isDislikeSign(results.multiHandLandmarks[1], results.multiHandedness[1].label)) {
       redirectTriggered = true;
       window.location.href = "index.html";
@@ -470,3 +589,5 @@ const camera = new Camera(videoElement, {
   height: 1080,
 });
 camera.start();
+
+createPrompt();

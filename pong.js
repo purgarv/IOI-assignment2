@@ -1,4 +1,5 @@
 let redirectTriggered = false; // Flag to prevent multiple redirects
+let promptClosed = false; // To track if the prompt is closed
 
 const canvas = document.getElementById("pongCanvas");
 const context = canvas.getContext("2d");
@@ -81,29 +82,140 @@ function isDislikeSign(landmarks, handedness) {
     const thumbBase = landmarks[2]; // Base of thumb
     const wrist = landmarks[0]; // Wrist
 
-    console.log(handedness);
-  
     const thumbDown = thumbTip.y > wrist.y && thumbTip.y > thumbBase.y;
-    const fingersFolded = handedness === "Right" ?
-        landmarks[8].x > landmarks[5].x && // Index finger
+    const fingersFolded = handedness === "Right"
+        ? landmarks[8].x > landmarks[5].x && // Index finger
         landmarks[12].x > landmarks[9].x && // Middle finger
         landmarks[16].x > landmarks[13].x && // Ring finger
         landmarks[20].x > landmarks[17].x // Pinky
-        :
-        landmarks[5].x > landmarks[8].x && // Index finger
+        : landmarks[5].x > landmarks[8].x && // Index finger
         landmarks[9].x > landmarks[12].x && // Middle finger
         landmarks[13].x > landmarks[16].x && // Ring finger
         landmarks[17].x > landmarks[20].x; // Pinky
-  
+
     return thumbDown && fingersFolded;
 }
 
-// Process hand landmarks
+function isFist(landmarks) {
+    const tips = [8, 12, 16, 20];
+    const base = [6, 10, 14, 18];
+    return tips.every((tip, i) => landmarks[tip].y > landmarks[base[i]].y);
+}
+
+function calculatePalmCenter(landmarks) {
+    const points = [0, 5, 9, 13, 17];
+    const center = points.reduce(
+        (acc, point) => {
+            acc.x += landmarks[point].x;
+            acc.y += landmarks[point].y;
+            return acc;
+        },
+        { x: 0, y: 0 }
+    );
+    center.x /= points.length;
+    center.y /= points.length;
+    return center;
+}
+
+function createPrompt() {
+    const overlay = document.createElement('div');
+    overlay.id = 'instructionOverlay';
+    overlay.style.position = 'fixed';
+    overlay.style.top = 0;
+    overlay.style.left = 0;
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+    overlay.style.display = 'flex';
+    overlay.style.flexDirection = 'column';
+    overlay.style.justifyContent = 'center';
+    overlay.style.alignItems = 'center';
+    overlay.style.color = 'white';
+    overlay.style.fontSize = '24px';
+    overlay.style.textAlign = 'center';
+    overlay.innerHTML = `
+        <h1>Pong</h1>
+        <p>S premikanjem rok nadzirate lopar.</p>
+        <p>Za vrnitev na glavni meni naredite 👎 z obema rokama.</p>
+        <p>Za nadaljevanje držite roko nad OK in naredite pest.</p>
+        <button id="okButton" style="margin-top: 20px; padding: 10px 20px; font-size: 24px; cursor: pointer;">OK</button>
+    `;
+    document.body.appendChild(overlay);
+
+    const okButton = document.getElementById('okButton');
+    okButton.style.position = 'relative';
+    okButton.style.zIndex = '10';
+
+    return okButton;
+}
+
 hands.onResults((results) => {
     isMediaPipeReady = true; // Mark MediaPipe as ready
 
     if (redirectTriggered) return;
     const landmarks = results.multiHandLandmarks;
+
+    if (!promptClosed) {
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        if (landmarks.length === 1) {
+            const palmCenter = calculatePalmCenter(landmarks[0]);
+            const palmX = canvas.width - palmCenter.x * canvas.width;
+            const palmY = palmCenter.y * canvas.height;
+
+            const okButton = document.getElementById('okButton');
+            const buttonRect = okButton.getBoundingClientRect();
+
+            const mirroredLandmarks = landmarks[0].map((landmark) => ({
+                x: 1 - landmark.x,
+                y: landmark.y,
+                z: landmark.z,
+            }));
+
+            const handConnections = [
+                [0, 1], [1, 2], [2, 3], [3, 4],
+                [2, 5], [5, 6], [6, 7], [7, 8],
+                [5, 9], [9, 10], [10, 11], [11, 12],
+                [9, 13], [13, 14], [14, 15], [15, 16],
+                [13, 17], [17, 18], [18, 19], [19, 20],
+                [0, 17], [5, 9], [9, 13], [13, 17]
+            ];
+
+            context.beginPath();
+            context.strokeStyle = 'green';
+            context.lineWidth = 2;
+            handConnections.forEach(([start, end]) => {
+                const startLandmark = mirroredLandmarks[start];
+                const endLandmark = mirroredLandmarks[end];
+                context.moveTo(startLandmark.x * canvas.width, startLandmark.y * canvas.height);
+                context.lineTo(endLandmark.x * canvas.width, endLandmark.y * canvas.height);
+            });
+            context.stroke();
+
+            mirroredLandmarks.forEach((landmark) => {
+                const x = landmark.x * canvas.width;
+                const y = landmark.y * canvas.height;
+                context.beginPath();
+                context.arc(x, y, 5, 0, 2 * Math.PI);
+                context.fillStyle = 'red';
+                context.fill();
+            });
+
+            if (
+                palmX > buttonRect.left &&
+                palmX < buttonRect.right &&
+                palmY > buttonRect.top &&
+                palmY < buttonRect.bottom &&
+                isFist(landmarks[0])
+            ) {
+                context.clearRect(0, 0, canvas.width, canvas.height);
+                promptClosed = true;
+                document.getElementById('instructionOverlay').remove();
+                resetBall();
+                requestAnimationFrame(gameLoop);
+            }
+        }
+        return;
+    }
 
     if (landmarks.length > 0) {
         if (landmarks.length === 1) {
@@ -139,7 +251,6 @@ hands.onResults((results) => {
     }
 });
 
-// Draw the video background with transparency
 function drawVideoBackground() {
     context.save();
     context.globalAlpha = 0.05;
@@ -150,7 +261,6 @@ function drawVideoBackground() {
     context.globalAlpha = 1.0;
 }
 
-// Draw the ball
 function drawBall() {
     context.beginPath();
     context.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
@@ -159,13 +269,11 @@ function drawBall() {
     context.closePath();
 }
 
-// Draw paddles
 function drawPaddle(paddle) {
     context.fillStyle = paddle.color;
     context.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
 }
 
-// Draw the score
 function drawScore() {
     context.fillStyle = "white";
     context.font = "48px Arial";
@@ -173,12 +281,10 @@ function drawScore() {
     context.fillText(`${leftScore} : ${rightScore}`, canvas.width / 2, 50);
 }
 
-// Move paddles smoothly
 function movePaddles() {
     leftPaddle.targetY = Math.max(0, Math.min(leftHandY - paddleHeight / 2, canvas.height - paddleHeight));
     rightPaddle.targetY = Math.max(0, Math.min(rightHandY - paddleHeight / 2, canvas.height - paddleHeight));
 
-    // Smoothly interpolate to the target positions
     leftPaddle.y += (leftPaddle.targetY - leftPaddle.y) * 0.2;
     rightPaddle.y += (rightPaddle.targetY - rightPaddle.y) * 0.2;
 }
@@ -186,9 +292,8 @@ function movePaddles() {
 let lastTime = performance.now();
 const baseBallSpeed = 300;
 
-// Move the ball
 function moveBall(dt) {
-    if (ballIsResetting) return; // Don't move the ball if it's resetting
+    if (ballIsResetting || !promptClosed) return;
 
     const velocityX = (ball.speedX / Math.sqrt(ball.speedX ** 2 + ball.speedY ** 2)) * baseBallSpeed * speedMultiplier;
     const velocityY = (ball.speedY / Math.sqrt(ball.speedX ** 2 + ball.speedY ** 2)) * baseBallSpeed * speedMultiplier;
@@ -196,39 +301,35 @@ function moveBall(dt) {
     ball.x += velocityX * dt;
     ball.y += velocityY * dt;
 
-    // Ball collision with top and bottom boundaries
     if (ball.y - ball.radius < 0) {
-        ball.y = ball.radius; // Prevent overlap
+        ball.y = ball.radius;
         ball.speedY *= -1;
     }
     if (ball.y + ball.radius > canvas.height) {
-        ball.y = canvas.height - ball.radius; // Prevent overlap
+        ball.y = canvas.height - ball.radius;
         ball.speedY *= -1;
     }
 
-    // Ball collision with left paddle
     if (
         ball.x - ball.radius < leftPaddle.x + leftPaddle.width &&
         ball.y > leftPaddle.y &&
         ball.y < leftPaddle.y + leftPaddle.height &&
         ball.speedX < 0
     ) {
-        ball.x = leftPaddle.x + leftPaddle.width + ball.radius; // Prevent ball sticking
+        ball.x = leftPaddle.x + leftPaddle.width + ball.radius;
         ball.speedX *= -1;
     }
 
-    // Ball collision with right paddle
     if (
         ball.x + ball.radius > rightPaddle.x &&
         ball.y > rightPaddle.y &&
         ball.y < rightPaddle.y + rightPaddle.height &&
         ball.speedX > 0
     ) {
-        ball.x = rightPaddle.x - ball.radius; // Prevent ball sticking
+        ball.x = rightPaddle.x - ball.radius;
         ball.speedX *= -1;
     }
 
-    // Ball out of bounds
     if (ball.x < 0) {
         rightScore++;
         resetBall();
@@ -238,32 +339,27 @@ function moveBall(dt) {
         resetBall();
     }
 
-    // Gradually increase speed multiplier
     speedMultiplier += speedIncreaseRate * dt;
 }
 
-// Reset the ball and speed multiplier
 function resetBall() {
     ball.x = canvas.width / 2;
     ball.y = canvas.height / 2;
-    ball.speedX = 0; // Temporarily set speed to 0
+    ball.speedX = 0;
     ball.speedY = 0;
-    speedMultiplier = 1; // Reset speed multiplier
+    speedMultiplier = 1;
 
-    ballIsResetting = true; // Prevent ball movement during reset
+    ballIsResetting = true;
 
-    // After a short delay, set a random direction for the ball
     setTimeout(() => {
         ball.speedX = Math.random() > 0.5 ? 1 : -1;
         ball.speedY = Math.random() > 0.5 ? 1 : -1;
-        ballIsResetting = false; // Allow ball to move
-    }, 2000); // 2-second delay
+        ballIsResetting = false;
+    }, 2000);
 }
 
-// Render game elements
 function render() {
     context.clearRect(0, 0, canvas.width, canvas.height);
-
     drawVideoBackground();
     drawPaddle(leftPaddle);
     drawPaddle(rightPaddle);
@@ -271,10 +367,9 @@ function render() {
     drawScore();
 }
 
-// Game loop
 function gameLoop(timestamp) {
-    if (!isMediaPipeReady) {
-        requestAnimationFrame(gameLoop); // Wait until MediaPipe is ready
+    if (!isMediaPipeReady || !promptClosed) {
+        requestAnimationFrame(gameLoop);
         return;
     }
 
@@ -288,6 +383,4 @@ function gameLoop(timestamp) {
     requestAnimationFrame(gameLoop);
 }
 
-// Start the game
-resetBall();
-requestAnimationFrame(gameLoop);
+createPrompt();
