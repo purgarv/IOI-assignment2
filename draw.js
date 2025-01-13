@@ -36,7 +36,7 @@ function createPrompt() {
     overlay.style.textAlign = 'center';
     overlay.innerHTML = `
         <h1>Risanje</h1>
-        <p>S premikanjem roke lahko rišete. <br>Za spremembo barve naredite pest. 
+        <p>S premikanjem roke lahko rišete. <br>Za spremembo barve naredite pest. <br> Z razdaljo roke do kamere lahko nadzorujete velikost risanja.
         <p>Za vrnitev na glavni meni naredite 👎 z obema rokama.</p>
         <p>Za nadaljevanje držite roko nad OK in naredite pest.</p>
         <button id="okButton" style="margin-top: 20px; padding: 10px 20px; font-size: 18px; cursor: pointer;">OK</button>
